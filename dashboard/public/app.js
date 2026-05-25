@@ -340,8 +340,12 @@ function renderRanking(container, rows) {
 function renderFullShipmentSummary() {
   if (!els.fullShipmentSummary) return;
 
-  const rows = buildFullShipmentRows();
-  els.fullShipmentSubtitle.textContent = `${fmt(rows.length)} envios`;
+  const allRows = buildFullShipmentRows();
+  const isFiltered = Boolean(state.filters.fullShipmentSearch || state.filters.fullStartDate || state.filters.fullEndDate);
+  const rows = isFiltered ? allRows : allRows.slice(0, 20);
+  els.fullShipmentSubtitle.textContent = isFiltered
+    ? `${fmt(rows.length)} envios`
+    : `${fmt(rows.length)} ultimos envios`;
   els.fullShipmentSummary.innerHTML = rows.length
     ? `
       <div class="table-wrap">
