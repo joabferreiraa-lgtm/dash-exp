@@ -10,6 +10,7 @@ const configPath = path.join(__dirname, "config.json");
 const env = globalThis.process?.env || {};
 const PORT = Number(env.PORT || 4280);
 const SPREADSHEET_ID = env.SHEET_ID || "1bS2iqiMXsXxBXpTkHYW2q2d0pM7smxfhD6e3gWtYRUo";
+const ADMIN_PASSWORD = env.ADMIN_PASSWORD || "";
 const SHEETS = {
   full: "FULL",
   tinyRaw: "Tiny_raw",
@@ -85,6 +86,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if ((url.pathname === "/admin" || url.pathname === "/admin.html") && !isAdminAuthorized(req)) {
+      requestAdminPassword(res);
+      return;
+    }
+
     const filePath = url.pathname === "/admin" ? "/admin.html" : (url.pathname === "/" ? "/index.html" : url.pathname);
     await serveStatic(res, filePath);
   } catch (error) {
@@ -95,6 +101,30 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Dashboard rodando em http://localhost:${PORT}`);
 });
+
+function isAdminAuthorized(req) {
+  if (!ADMIN_PASSWORD) return true;
+
+  const auth = req.headers.authorization || "";
+  if (!auth.startsWith("Basic ")) return false;
+
+  try {
+    const decoded = Buffer.from(auth.slice(6), "base64").toString("utf8");
+    const separator = decoded.indexOf(":");
+    const password = separator >= 0 ? decoded.slice(separator + 1) : "";
+    return password === ADMIN_PASSWORD;
+  } catch {
+    return false;
+  }
+}
+
+function requestAdminPassword(res) {
+  res.writeHead(401, {
+    "www-authenticate": 'Basic realm="Admin Dashboard", charset="UTF-8"',
+    "content-type": "text/plain; charset=utf-8",
+  });
+  res.end("Senha necessaria para acessar o admin.");
+}
 
 async function getDashboardData(force = false) {
   if (!force && cache && Date.now() - cacheAt < CACHE_MS) return cache;
