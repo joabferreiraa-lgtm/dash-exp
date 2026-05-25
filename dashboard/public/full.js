@@ -102,96 +102,32 @@ els.form.addEventListener("submit", async event => {
 });
 
 async function submitEntry(payload) {
-  try {
-    const response = await fetch("/api/full-entry", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const result = await response.json();
-    if (!result.ok) throw new Error(result.error || "Não foi possível inserir.");
-    if (!result.row || typeof result.qtdTotal === "undefined") {
-      throw new Error(`O Web App não confirmou a linha inserida. Versão recebida: ${result.version || "sem versão"}.`);
-    }
-    return {
-      message: `Inserido no FULL na linha ${result.row}. Total: ${fmt(result.qtdTotal)} itens.`,
-      entry: {
-        rowNumber: result.row,
-        name: result.nome || payload.nome,
-        qtd: result.qtd || payload.qtd,
-        sku: result.sku || payload.sku,
-        envio: result.envio || payload.envio,
-        loja: result.loja || payload.loja,
-        qtdTotal: result.qtdTotal,
-        date: new Date().toISOString(),
-        justAdded: true,
-      },
-    };
-  } catch (error) {
-    if (!state.webAppUrl) throw error;
-    await submitEntryDirect(payload);
-    return {
-      message: "Enviado para o FULL. Aguarde alguns segundos e confira a planilha.",
-      entry: {
-        name: payload.nome,
-        qtd: payload.qtd,
-        sku: payload.sku,
-        envio: payload.envio,
-        loja: payload.loja,
-        qtdTotal: payload.qtd,
-        date: new Date().toISOString(),
-        justAdded: true,
-      },
-    };
-  }
-}
-
-function submitEntryDirect(payload) {
-  return new Promise((resolve, reject) => {
-    const iframeName = `fullEntryFrame${Date.now()}`;
-    const iframe = document.createElement("iframe");
-    iframe.name = iframeName;
-    iframe.hidden = true;
-
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = state.webAppUrl;
-    form.target = iframeName;
-    form.hidden = true;
-
-    Object.entries(payload).forEach(([name, value]) => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = name;
-      input.value = value;
-      form.appendChild(input);
-    });
-
-    let settled = false;
-    const done = () => {
-      if (settled) return;
-      settled = true;
-      setTimeout(() => {
-        iframe.remove();
-        form.remove();
-      }, 1000);
-      resolve();
-    };
-
-    iframe.addEventListener("load", done);
-    setTimeout(done, 4500);
-
-    document.body.appendChild(iframe);
-    document.body.appendChild(form);
-
-    try {
-      form.submit();
-    } catch (error) {
-      iframe.remove();
-      form.remove();
-      reject(error);
-    }
+  const response = await fetch("/api/full-entry", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
   });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) {
+    throw new Error(result.error || "Nao foi possivel gravar no FULL. Tente novamente.");
+  }
+  if (!result.row || typeof result.qtdTotal === "undefined") {
+    throw new Error(`O Web App nao confirmou a linha inserida. Versao recebida: ${result.version || "sem versao"}.`);
+  }
+  return {
+    message: `Inserido no FULL na linha ${result.row}. Total: ${fmt(result.qtdTotal)} itens.`,
+    entry: {
+      rowNumber: result.row,
+      name: result.nome || payload.nome,
+      qtd: result.qtd || payload.qtd,
+      sku: result.sku || payload.sku,
+      envio: result.envio || payload.envio,
+      loja: result.loja || payload.loja,
+      qtdTotal: result.qtdTotal,
+      date: new Date().toISOString(),
+      justAdded: true,
+    },
+  };
 }
 
 async function loadRecentEntries(force = false) {
