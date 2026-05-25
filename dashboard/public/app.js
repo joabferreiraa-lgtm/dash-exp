@@ -9,7 +9,7 @@ const state = {
     account: "all",
     source: "all",
     person: "all",
-    fullShipment: "all",
+    fullShipmentSearch: "",
     fullStartDate: "",
     fullEndDate: "",
   },
@@ -40,7 +40,7 @@ const els = {
   previousMonthTable: document.querySelector("#previousMonthTable"),
   tableSubtitle: document.querySelector("#tableSubtitle"),
   table: document.querySelector("#peopleTable"),
-  fullShipment: document.querySelector("#fullShipmentFilter"),
+  fullShipmentSearch: document.querySelector("#fullShipmentSearch"),
   fullStartDate: document.querySelector("#fullStartDateFilter"),
   fullEndDate: document.querySelector("#fullEndDateFilter"),
   fullClearFilters: document.querySelector("#fullClearFilters"),
@@ -58,8 +58,8 @@ els.refresh?.addEventListener("click", () => loadData(true));
   });
 });
 
-els.fullShipment?.addEventListener("change", () => {
-  state.filters.fullShipment = els.fullShipment.value;
+els.fullShipmentSearch?.addEventListener("input", () => {
+  state.filters.fullShipmentSearch = clean(els.fullShipmentSearch.value).toLowerCase();
   renderFullShipmentSummary();
 });
 
@@ -71,10 +71,10 @@ els.fullShipment?.addEventListener("change", () => {
 });
 
 els.fullClearFilters?.addEventListener("click", () => {
-  state.filters.fullShipment = "all";
+  state.filters.fullShipmentSearch = "";
   state.filters.fullStartDate = "";
   state.filters.fullEndDate = "";
-  els.fullShipment.value = "all";
+  els.fullShipmentSearch.value = "";
   els.fullStartDate.value = "";
   els.fullEndDate.value = "";
   renderFullShipmentSummary();
@@ -178,8 +178,6 @@ function setupFilters() {
   fillSelect(els.account, "account", [["all", "Todas"], ...accounts.map(account => [account, account])]);
   fillSelect(els.source, "source", [["all", "Full + Tiny"], ["Full", "Apenas Full"], ["Tiny", "Apenas Tiny"]]);
   fillSelect(els.person, "person", [["all", "Todos"], ...people.map(person => [person, person])]);
-  fillFullShipmentFilter();
-
   if (els.fullStartDate) els.fullStartDate.dataset.filter = "fullStartDate";
   if (els.fullEndDate) els.fullEndDate.dataset.filter = "fullEndDate";
 
@@ -195,17 +193,6 @@ function fillSelect(select, filter, options) {
   if (options.some(([value]) => value === state.filters[filter])) {
     select.value = state.filters[filter];
   }
-}
-
-function fillFullShipmentFilter() {
-  if (!els.fullShipment) return;
-
-  const shipments = [...new Set(state.data.records
-    .filter(record => record.source === "Full" && record.envio)
-    .map(record => record.envio))]
-    .sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
-
-  fillSelect(els.fullShipment, "fullShipment", [["all", "Todos"], ...shipments.map(envio => [envio, envio])]);
 }
 
 function render() {
@@ -356,43 +343,61 @@ function renderFullShipmentSummary() {
   const rows = buildFullShipmentRows();
   els.fullShipmentSubtitle.textContent = `${fmt(rows.length)} envios`;
   els.fullShipmentSummary.innerHTML = rows.length
-    ? rows.map(row => `
-      <article class="shipment-card">
-        <div class="shipment-card-head">
-          <div>
-            <span>Numero do envio</span>
-            <strong>${escapeHtml(row.envio)}</strong>
-          </div>
-          <div>
-            <span>Loja</span>
-            <strong>${escapeHtml(row.loja || "-")}</strong>
-          </div>
-          <div>
-            <span>Quantidade de produtos</span>
-            <strong>${fmt(row.totalProducts)}</strong>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table class="sku-table">
-            <thead>
-              <tr>
-                <th>SKU</th>
-                <th>Quantidade</th>
+    ? `
+      <div class="table-wrap">
+        <table class="shipment-table">
+          <thead>
+            <tr>
+              <th>Numero do envio</th>
+              <th>Loja</th>
+              <th>Ultima embalagem</th>
+              <th>Quantidade de produtos</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr class="shipment-row" tabindex="0">
+                <td><strong>${escapeHtml(row.envio)}</strong></td>
+                <td>${escapeHtml(row.loja || "-")}</td>
+                <td>${escapeHtml(formatDateTime(row.latestDate))}</td>
+                <td><strong>${fmt(row.totalProducts)}</strong></td>
               </tr>
-            </thead>
-            <tbody>
-              ${row.skus.map(sku => `
-                <tr>
-                  <td>${escapeHtml(sku.sku || "-")}</td>
-                  <td><strong>${fmt(sku.qty)}</strong></td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-      </article>
-    `).join("")
+              <tr class="shipment-detail-row">
+                <td colspan="4">
+                  <table class="sku-table">
+                    <thead>
+                      <tr>
+                        <th>SKU</th>
+                        <th>Quantidade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${row.skus.map(sku => `
+                        <tr>
+                          <td>${escapeHtml(sku.sku || "-")}</td>
+                          <td><strong>${fmt(sku.qty)}</strong></td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `
     : `<p class="muted">Sem envios Full para os filtros selecionados.</p>`;
+
+  els.fullShipmentSummary.querySelectorAll(".shipment-row").forEach(row => {
+    row.addEventListener("click", () => row.classList.toggle("open"));
+    row.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        row.classList.toggle("open");
+      }
+    });
+  });
 }
 
 function buildFullShipmentRows() {
@@ -402,7 +407,7 @@ function buildFullShipmentRows() {
 
   for (const record of state.data.records) {
     if (record.source !== "Full") continue;
-    if (state.filters.fullShipment !== "all" && record.envio !== state.filters.fullShipment) continue;
+    if (state.filters.fullShipmentSearch && !clean(record.envio).toLowerCase().includes(state.filters.fullShipmentSearch)) continue;
 
     const date = new Date(record.date);
     if (start && date < start) continue;
@@ -549,6 +554,18 @@ function previousMonthLabel() {
   const now = new Date();
   const previous = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   return `${monthNames[previous.getMonth()]} ${previous.getFullYear()}`;
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function fmt(value) {
