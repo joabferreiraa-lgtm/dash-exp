@@ -129,8 +129,31 @@
             </table>
           </div>
         </section>
+
+        <section class="panel table-panel">
+          <div class="panel-head">
+            <h2>Resumo Full por envio</h2>
+            <span id="fullShipmentSubtitle"></span>
+          </div>
+          <div class="inline-filters">
+            <label>
+              Numero do envio
+              <select id="fullShipmentFilter"></select>
+            </label>
+            <label>
+              Data inicial
+              <input id="fullStartDateFilter" type="date" />
+            </label>
+            <label>
+              Data final
+              <input id="fullEndDateFilter" type="date" />
+            </label>
+            <button id="fullClearFilters" type="button">Limpar filtros</button>
+          </div>
+          <div id="fullShipmentSummary" class="shipment-summary"></div>
+        </section>
       </main>
     </div>
-    <script src="/app.js?v=7" type="module"></script>
+    <script src="/app.js?v=8" type="module"></script>
   </body>
 </html>

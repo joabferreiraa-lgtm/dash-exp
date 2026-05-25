@@ -115,6 +115,16 @@ select {
   border-color: #374151;
 }
 
+input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 10px;
+  font: inherit;
+  color: var(--ink);
+}
+
 button {
   background: #facc15;
   color: #111827;
@@ -276,6 +286,56 @@ canvas {
   overflow: auto;
 }
 
+.inline-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(160px, 0.5fr)) minmax(140px, 0.4fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.inline-filters label {
+  color: var(--ink);
+}
+
+.inline-filters select {
+  background: white;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.inline-filters button {
+  align-self: end;
+}
+
+.shipment-summary {
+  display: grid;
+  gap: 14px;
+}
+
+.shipment-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.shipment-card-head {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.shipment-card-head span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.sku-table {
+  min-width: 420px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -322,5 +382,10 @@ th {
   .top-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .inline-filters,
+  .shipment-card-head {
+    grid-template-columns: 1fr;
   }
 }

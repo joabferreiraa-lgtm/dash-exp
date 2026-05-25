@@ -9,6 +9,9 @@ const state = {
     account: "all",
     source: "all",
     person: "all",
+    fullShipment: "all",
+    fullStartDate: "",
+    fullEndDate: "",
   },
 };
 
@@ -37,6 +40,12 @@ const els = {
   previousMonthTable: document.querySelector("#previousMonthTable"),
   tableSubtitle: document.querySelector("#tableSubtitle"),
   table: document.querySelector("#peopleTable"),
+  fullShipment: document.querySelector("#fullShipmentFilter"),
+  fullStartDate: document.querySelector("#fullStartDateFilter"),
+  fullEndDate: document.querySelector("#fullEndDateFilter"),
+  fullClearFilters: document.querySelector("#fullClearFilters"),
+  fullShipmentSubtitle: document.querySelector("#fullShipmentSubtitle"),
+  fullShipmentSummary: document.querySelector("#fullShipmentSummary"),
 };
 
 loadData();
@@ -47,6 +56,28 @@ els.refresh?.addEventListener("click", () => loadData(true));
     state.filters[select.dataset.filter] = select.value;
     render();
   });
+});
+
+els.fullShipment?.addEventListener("change", () => {
+  state.filters.fullShipment = els.fullShipment.value;
+  renderFullShipmentSummary();
+});
+
+[els.fullStartDate, els.fullEndDate].filter(Boolean).forEach(input => {
+  input.addEventListener("change", () => {
+    state.filters[input.dataset.filter] = input.value;
+    renderFullShipmentSummary();
+  });
+});
+
+els.fullClearFilters?.addEventListener("click", () => {
+  state.filters.fullShipment = "all";
+  state.filters.fullStartDate = "";
+  state.filters.fullEndDate = "";
+  els.fullShipment.value = "all";
+  els.fullStartDate.value = "";
+  els.fullEndDate.value = "";
+  renderFullShipmentSummary();
 });
 
 async function loadData(force = false) {
@@ -98,7 +129,19 @@ function recordsFromFull(rows) {
     const qty = toNumber(row[7]);
     const date = toDate(row[8]);
     if (!name || !qty || !date) return null;
-    return { source: "Full", account: "FULL", name, qty, year: date.getFullYear(), month: date.getMonth() + 1, date: date.toISOString() };
+    return {
+      source: "Full",
+      account: "FULL",
+      name,
+      qty,
+      productQty: toNumber(row[1]),
+      sku: clean(row[2]),
+      loja: clean(row[3]),
+      envio: clean(row[4]),
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      date: date.toISOString(),
+    };
   }).filter(Boolean);
 }
 
@@ -135,6 +178,10 @@ function setupFilters() {
   fillSelect(els.account, "account", [["all", "Todas"], ...accounts.map(account => [account, account])]);
   fillSelect(els.source, "source", [["all", "Full + Tiny"], ["Full", "Apenas Full"], ["Tiny", "Apenas Tiny"]]);
   fillSelect(els.person, "person", [["all", "Todos"], ...people.map(person => [person, person])]);
+  fillFullShipmentFilter();
+
+  if (els.fullStartDate) els.fullStartDate.dataset.filter = "fullStartDate";
+  if (els.fullEndDate) els.fullEndDate.dataset.filter = "fullEndDate";
 
   if (els.year) {
     els.year.value = state.filters.year;
@@ -148,6 +195,17 @@ function fillSelect(select, filter, options) {
   if (options.some(([value]) => value === state.filters[filter])) {
     select.value = state.filters[filter];
   }
+}
+
+function fillFullShipmentFilter() {
+  if (!els.fullShipment) return;
+
+  const shipments = [...new Set(state.data.records
+    .filter(record => record.source === "Full" && record.envio)
+    .map(record => record.envio))]
+    .sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
+
+  fillSelect(els.fullShipment, "fullShipment", [["all", "Todos"], ...shipments.map(envio => [envio, envio])]);
 }
 
 function render() {
@@ -182,6 +240,7 @@ function render() {
   renderRanking(els.rankingMonthList, rankingMonthRows);
   renderPreviousMonthTable(previousMonthRows);
   renderTable(peopleRows);
+  renderFullShipmentSummary();
 }
 
 function filteredRecords() {
@@ -289,6 +348,95 @@ function renderRanking(container, rows) {
         </div>
       `).join("")
     : `<p class="muted">Sem dados para o filtro atual.</p>`;
+}
+
+function renderFullShipmentSummary() {
+  if (!els.fullShipmentSummary) return;
+
+  const rows = buildFullShipmentRows();
+  els.fullShipmentSubtitle.textContent = `${fmt(rows.length)} envios`;
+  els.fullShipmentSummary.innerHTML = rows.length
+    ? rows.map(row => `
+      <article class="shipment-card">
+        <div class="shipment-card-head">
+          <div>
+            <span>Numero do envio</span>
+            <strong>${escapeHtml(row.envio)}</strong>
+          </div>
+          <div>
+            <span>Loja</span>
+            <strong>${escapeHtml(row.loja || "-")}</strong>
+          </div>
+          <div>
+            <span>Quantidade de produtos</span>
+            <strong>${fmt(row.totalProducts)}</strong>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="sku-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${row.skus.map(sku => `
+                <tr>
+                  <td>${escapeHtml(sku.sku || "-")}</td>
+                  <td><strong>${fmt(sku.qty)}</strong></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    `).join("")
+    : `<p class="muted">Sem envios Full para os filtros selecionados.</p>`;
+}
+
+function buildFullShipmentRows() {
+  const start = state.filters.fullStartDate ? new Date(`${state.filters.fullStartDate}T00:00:00`) : null;
+  const end = state.filters.fullEndDate ? new Date(`${state.filters.fullEndDate}T23:59:59`) : null;
+  const map = new Map();
+
+  for (const record of state.data.records) {
+    if (record.source !== "Full") continue;
+    if (state.filters.fullShipment !== "all" && record.envio !== state.filters.fullShipment) continue;
+
+    const date = new Date(record.date);
+    if (start && date < start) continue;
+    if (end && date > end) continue;
+
+    const key = `${record.envio}|||${record.loja}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        envio: record.envio || "-",
+        loja: record.loja || "-",
+        totalProducts: 0,
+        latestDate: date,
+        skuMap: new Map(),
+      });
+    }
+
+    const row = map.get(key);
+    const qty = record.productQty || 0;
+    row.totalProducts += qty;
+    row.skuMap.set(record.sku, (row.skuMap.get(record.sku) || 0) + qty);
+    if (date > row.latestDate) row.latestDate = date;
+  }
+
+  return [...map.values()]
+    .map(row => ({
+      envio: row.envio,
+      loja: row.loja,
+      totalProducts: row.totalProducts,
+      latestDate: row.latestDate,
+      skus: [...row.skuMap.entries()]
+        .map(([sku, qty]) => ({ sku, qty }))
+        .sort((a, b) => b.qty - a.qty || a.sku.localeCompare(b.sku, "pt-BR", { numeric: true })),
+    }))
+    .sort((a, b) => b.latestDate - a.latestDate || a.envio.localeCompare(b.envio, "pt-BR", { numeric: true }));
 }
 
 function renderPreviousMonthTable(rows) {
