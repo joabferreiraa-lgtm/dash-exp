@@ -178,7 +178,7 @@ async function getRecentFullEntries() {
         envio: clean(row[4]),
         obs: clean(row[5]),
         qtdItens: toNumber(row[6]),
-        qtdTotal: toNumber(row[7]),
+        qtdTotal: fullItemsQty(row),
         date: date ? date.toISOString() : "",
       };
     })
@@ -213,7 +213,7 @@ function recordsFromFull(rows) {
   const data = rows.slice(1);
   return data.map(row => {
     const name = clean(row[0]);
-    const qty = toNumber(row[7]);
+    const qty = fullItemsQty(row);
     const date = toDate(row[8]);
     if (!name || !qty || !date) return null;
     return {
@@ -230,6 +230,12 @@ function recordsFromFull(rows) {
       date: date.toISOString(),
     };
   }).filter(Boolean);
+}
+
+function fullItemsQty(row) {
+  const total = toNumber(row[7]);
+  if (total) return total;
+  return toNumber(row[1]) * toNumber(row[6]);
 }
 
 function recordsFromTinyRaw(rows, usuarios) {
