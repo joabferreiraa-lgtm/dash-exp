@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Produtividade Colaboradores</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="collab-app">
+      <main>
+        <section class="topbar">
+          <div>
+            <h1>Produtividade</h1>
+            <p>Resumo geral para acompanhamento da equipe.</p>
+          </div>
+          <div class="top-actions">
+            <a class="action-link" href="/full.html">Lancamento Full</a>
+            <div class="status-pill" id="statusPill">Carregando</div>
+          </div>
+          <p id="updatedAt" hidden></p>
+        </section>
+
+        <section class="kpis">
+          <article>
+            <span>Total</span>
+            <strong id="kpiTotal">0</strong>
+          </article>
+          <article>
+            <span>Full</span>
+            <strong id="kpiFull">0</strong>
+          </article>
+          <article>
+            <span>Tiny</span>
+            <strong id="kpiTiny">0</strong>
+          </article>
+          <article>
+            <span>Colaboradores</span>
+            <strong id="kpiPeople">0</strong>
+          </article>
+        </section>
+
+        <section class="grid">
+          <div class="panel chart-panel">
+            <div class="panel-head">
+              <h2>Evolucao mensal</h2>
+              <span id="chartSubtitle"></span>
+            </div>
+            <canvas id="monthlyChart" width="900" height="320"></canvas>
+          </div>
+
+          <div class="panel ranking-panel">
+            <div class="panel-head">
+              <h2>Ranking ultimos 7 dias</h2>
+              <span id="ranking7Subtitle"></span>
+            </div>
+            <div id="ranking7List" class="ranking-list"></div>
+          </div>
+
+          <div class="panel ranking-panel">
+            <div class="panel-head">
+              <h2>Ranking dia anterior</h2>
+              <span id="rankingYesterdaySubtitle"></span>
+            </div>
+            <div id="rankingYesterdayList" class="ranking-list"></div>
+          </div>
+
+          <div class="panel ranking-panel">
+            <div class="panel-head">
+              <h2>Ranking mes atual</h2>
+              <span id="rankingMonthSubtitle"></span>
+            </div>
+            <div id="rankingMonthList" class="ranking-list"></div>
+          </div>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-head">
+            <h2>Colaboradores</h2>
+            <span id="tableSubtitle"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Total</th>
+                  <th>Full</th>
+                  <th>Tiny</th>
+                  <th>Full %</th>
+                  <th>Tiny %</th>
+                </tr>
+              </thead>
+              <tbody id="peopleTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="/app.js?v=3" type="module"></script>
+  </body>
+</html>

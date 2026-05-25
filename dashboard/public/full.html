@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lancamento Full</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/full.css" />
+  </head>
+  <body class="entry-body">
+    <main class="entry-app">
+      <header class="entry-header">
+        <div class="brand entry-brand">
+          <div class="brand-mark">
+            <img src="/logo.png" alt="Logo" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
+            <span>OP</span>
+          </div>
+          <div>
+            <strong>Lançamento Full</strong>
+            <span>Registro de embalagem</span>
+          </div>
+        </div>
+        <a class="dash-link" href="/">Dashboard</a>
+      </header>
+
+      <section class="entry-panel">
+        <div class="entry-section">
+          <div class="entry-section-head">
+            <h1>Colaborador</h1>
+            <span id="selectedName">Selecione um nome</span>
+          </div>
+          <div id="nameButtons" class="name-grid"></div>
+        </div>
+
+        <form id="entryForm" class="entry-form">
+          <label>
+            Quantidade
+            <input id="qtdInput" name="qtd" type="number" min="1" step="1" inputmode="numeric" required />
+          </label>
+
+          <label>
+            SKU
+            <input id="skuInput" name="sku" list="skuList" autocomplete="off" required />
+            <datalist id="skuList"></datalist>
+          </label>
+
+          <label>
+            Nº do Envio
+            <input id="envioInput" name="envio" autocomplete="off" required />
+          </label>
+
+          <label>
+            Loja
+            <select id="lojaInput" name="loja" required>
+              <option value="">Selecione</option>
+              <option value="Meli">Meli</option>
+              <option value="Meli 2">Meli 2</option>
+              <option value="Meli MG">Meli MG</option>
+              <option value="Shopee">Shopee</option>
+            </select>
+          </label>
+
+          <label class="wide">
+            OBS
+            <textarea id="obsInput" name="obs" rows="3" placeholder="Opcional"></textarea>
+          </label>
+
+          <button id="submitButton" type="submit" class="submit-button">Inserir no FULL</button>
+        </form>
+
+        <div id="message" class="entry-message"></div>
+      </section>
+
+      <section class="entry-panel recent-panel">
+        <div class="entry-section-head">
+          <h2>Últimos 10 lançamentos</h2>
+          <button id="recentRefreshButton" type="button" class="recent-refresh">Atualizar</button>
+        </div>
+        <div class="recent-table-wrap">
+          <table class="recent-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nome</th>
+                <th>Qtd</th>
+                <th>SKU</th>
+                <th>Envio</th>
+                <th>Loja</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="recentEntries"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="/full.js?v=8" type="module"></script>
+  </body>
+</html>
