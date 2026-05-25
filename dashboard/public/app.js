@@ -126,7 +126,7 @@ async function fetchSheetCsv(sheetName) {
 function recordsFromFull(rows) {
   return rows.slice(1).map(row => {
     const name = clean(row[0]);
-    const qty = toNumber(row[7]);
+    const qty = fullItemsQty(row);
     const date = toDate(row[8]);
     if (!name || !qty || !date) return null;
     return {
@@ -143,6 +143,12 @@ function recordsFromFull(rows) {
       date: date.toISOString(),
     };
   }).filter(Boolean);
+}
+
+function fullItemsQty(row) {
+  const total = toNumber(row[7]);
+  if (total) return total;
+  return toNumber(row[1]) * toNumber(row[6]);
 }
 
 function recordsFromTinyRaw(rows, usuarios) {
