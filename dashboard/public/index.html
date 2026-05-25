@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Produtividade Colaboradores</title>
+    <title>Produtividade de Embalagem</title>
     <script src="/asset-guard.js?v=1"></script>
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -12,8 +12,8 @@
       <main>
         <section class="topbar">
           <div>
-            <h1>Produtividade</h1>
-            <p>Resumo geral para acompanhamento da equipe.</p>
+            <h1>Produtividade de Embalagem</h1>
+            <p>Itens embalados por colaborador, periodo e origem.</p>
           </div>
           <div class="top-actions">
             <a class="action-link" href="/full.html">Lancamento Full</a>
@@ -24,15 +24,15 @@
 
         <section class="kpis">
           <article>
-            <span>Total</span>
+            <span>Total de Itens</span>
             <strong id="kpiTotal">0</strong>
           </article>
           <article>
-            <span>Full</span>
+            <span>Itens Full</span>
             <strong id="kpiFull">0</strong>
           </article>
           <article>
-            <span>Tiny</span>
+            <span>Itens Tiny</span>
             <strong id="kpiTiny">0</strong>
           </article>
           <article>
@@ -44,7 +44,7 @@
         <section class="grid">
           <div class="panel chart-panel">
             <div class="panel-head">
-              <h2>Evolucao mensal</h2>
+              <h2>Evolucao mensal de itens embalados</h2>
               <span id="chartSubtitle"></span>
             </div>
             <canvas id="monthlyChart" width="900" height="320"></canvas>
@@ -52,7 +52,7 @@
 
           <div class="panel ranking-panel">
             <div class="panel-head">
-              <h2>Ranking ultimos 7 dias</h2>
+              <h2>Ranking itens embalados nos ultimos 7 dias</h2>
               <span id="ranking7Subtitle"></span>
             </div>
             <div id="ranking7List" class="ranking-list"></div>
@@ -60,7 +60,7 @@
 
           <div class="panel ranking-panel">
             <div class="panel-head">
-              <h2>Ranking dia anterior</h2>
+              <h2>Ranking itens embalados no dia anterior</h2>
               <span id="rankingYesterdaySubtitle"></span>
             </div>
             <div id="rankingYesterdayList" class="ranking-list"></div>
@@ -68,7 +68,7 @@
 
           <div class="panel ranking-panel">
             <div class="panel-head">
-              <h2>Ranking mes atual</h2>
+              <h2>Ranking itens embalados no mes atual</h2>
               <span id="rankingMonthSubtitle"></span>
             </div>
             <div id="rankingMonthList" class="ranking-list"></div>
@@ -77,7 +77,7 @@
 
         <section class="panel table-panel">
           <div class="panel-head">
-            <h2>Mes anterior</h2>
+            <h2>Mes anterior - itens embalados</h2>
             <span id="previousMonthSubtitle"></span>
           </div>
           <div class="table-wrap">
@@ -85,9 +85,9 @@
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Total</th>
-                  <th>Full</th>
-                  <th>Tiny</th>
+                  <th>Total de Itens</th>
+                  <th>Itens Full</th>
+                  <th>Itens Tiny</th>
                   <th>Full %</th>
                   <th>Tiny %</th>
                 </tr>
@@ -99,7 +99,7 @@
 
         <section class="panel table-panel">
           <div class="panel-head">
-            <h2>Total geral por colaborador</h2>
+            <h2>Total geral de itens por colaborador</h2>
             <span id="tableSubtitle"></span>
           </div>
           <div class="table-wrap">
@@ -107,9 +107,9 @@
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Total</th>
-                  <th>Full</th>
-                  <th>Tiny</th>
+                  <th>Total de Itens</th>
+                  <th>Itens Full</th>
+                  <th>Itens Tiny</th>
                   <th>Full %</th>
                   <th>Tiny %</th>
                 </tr>
@@ -120,6 +120,6 @@
         </section>
       </main>
     </div>
-    <script src="/app.js?v=6" type="module"></script>
+    <script src="/app.js?v=7" type="module"></script>
   </body>
 </html>

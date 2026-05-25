@@ -168,11 +168,13 @@ function render() {
   els.status.textContent = `${fmt(records.length)} lançamentos`;
   els.chartSubtitle.textContent = filterLabel();
   els.ranking7Subtitle.textContent = last7Label();
-  els.rankingYesterdaySubtitle.previousElementSibling.textContent = "Ranking dia anterior";
+  els.rankingYesterdaySubtitle.previousElementSibling.textContent = els.previousMonthTable
+    ? "Ranking itens embalados no dia anterior"
+    : "Ranking dia anterior";
   els.rankingYesterdaySubtitle.textContent = yesterdayLabel();
   els.rankingMonthSubtitle.textContent = currentMonthLabel();
   if (els.previousMonthSubtitle) els.previousMonthSubtitle.textContent = previousMonthLabel();
-  els.tableSubtitle.textContent = `${fmt(peopleRows.length)} colaboradores`;
+  els.tableSubtitle.textContent = `${fmt(peopleRows.length)} colaboradores com itens embalados`;
 
   drawMonthlyChart(monthRows);
   renderRanking(els.ranking7List, ranking7Rows);
@@ -307,7 +309,7 @@ function renderPreviousMonthTable(rows) {
       </tr>
     `;
     }).join("")
-    : `<tr><td colspan="6">Sem dados no mes anterior.</td></tr>`;
+    : `<tr><td colspan="6">Sem itens embalados no mes anterior.</td></tr>`;
 }
 
 function renderTable(rows) {
