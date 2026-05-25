@@ -326,7 +326,10 @@ async function serveStatic(res, requestPath) {
     ".svg": "image/svg+xml",
   }[ext] || "application/octet-stream";
 
-  res.writeHead(200, { "content-type": type });
+  res.writeHead(200, {
+    "content-type": type,
+    "cache-control": ext === ".html" ? "no-cache" : "public, max-age=300",
+  });
   res.end(body);
 }
 
