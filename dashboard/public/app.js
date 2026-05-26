@@ -46,11 +46,22 @@ const els = {
   fullClearFilters: document.querySelector("#fullClearFilters"),
   fullShipmentSubtitle: document.querySelector("#fullShipmentSubtitle"),
   fullShipmentSummary: document.querySelector("#fullShipmentSummary"),
+  rulesButton: document.querySelector("#rulesButton"),
+  rulesCloseButton: document.querySelector("#rulesCloseButton"),
+  rulesModal: document.querySelector("#rulesModal"),
 };
 
 loadData();
 
 els.refresh?.addEventListener("click", () => loadData(true));
+els.rulesButton?.addEventListener("click", openRulesModal);
+els.rulesCloseButton?.addEventListener("click", closeRulesModal);
+els.rulesModal?.addEventListener("click", event => {
+  if (event.target === els.rulesModal) closeRulesModal();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeRulesModal();
+});
 [els.year, els.month, els.account, els.source, els.person].filter(Boolean).forEach(select => {
   select.addEventListener("change", () => {
     state.filters[select.dataset.filter] = select.value;
@@ -114,6 +125,19 @@ async function loadDirectFromSheets() {
     accounts: [...new Set(records.map(r => r.account).filter(Boolean))].sort(),
     people: [...new Set(records.map(r => r.name).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")),
   };
+}
+
+function openRulesModal() {
+  if (!els.rulesModal) return;
+  els.rulesModal.classList.add("open");
+  els.rulesModal.setAttribute("aria-hidden", "false");
+  els.rulesCloseButton?.focus();
+}
+
+function closeRulesModal() {
+  if (!els.rulesModal) return;
+  els.rulesModal.classList.remove("open");
+  els.rulesModal.setAttribute("aria-hidden", "true");
 }
 
 async function fetchSheetCsv(sheetName) {
