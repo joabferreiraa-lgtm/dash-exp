@@ -394,12 +394,12 @@ h2 {
 }
 
 .grid .chart-panel {
-  grid-column: 1 / -1;
+  grid-column: span 2;
   order: 1;
 }
 
 .grid .ranking-panel {
-  grid-column: span 2;
+  grid-column: span 1;
 }
 
 .grid .ranking-panel:has(#rankingTodayList) {
@@ -411,10 +411,12 @@ h2 {
 }
 
 .grid .ranking-panel:has(#ranking7List) {
+  grid-column: span 2;
   order: 4;
 }
 
 .grid .ranking-panel:has(#rankingMonthList) {
+  grid-column: span 2;
   order: 5;
 }
 
