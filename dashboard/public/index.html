@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Produtividade de Embalagem</title>
     <script src="/asset-guard.js?v=1"></script>
-    <link rel="stylesheet" href="/styles.css?v=5" />
+    <link rel="stylesheet" href="/styles.css?v=6" />
   </head>
   <body>
     <div class="collab-app">
@@ -51,15 +51,7 @@
             <canvas id="monthlyChart" width="900" height="320"></canvas>
           </div>
 
-          <div class="panel ranking-panel">
-            <div class="panel-head">
-              <h2>Ranking itens embalados nos ultimos 7 dias</h2>
-              <span id="ranking7Subtitle"></span>
-            </div>
-            <div id="ranking7List" class="ranking-list"></div>
-          </div>
-
-          <div class="panel ranking-panel">
+          <div class="panel ranking-panel ranking-priority ranking-today">
             <div class="panel-head">
               <h2>Ranking itens embalados hoje</h2>
               <span id="rankingTodaySubtitle"></span>
@@ -67,12 +59,20 @@
             <div id="rankingTodayList" class="ranking-list"></div>
           </div>
 
-          <div class="panel ranking-panel">
+          <div class="panel ranking-panel ranking-priority ranking-yesterday">
             <div class="panel-head">
               <h2>Ranking itens embalados no dia anterior</h2>
               <span id="rankingYesterdaySubtitle"></span>
             </div>
             <div id="rankingYesterdayList" class="ranking-list"></div>
+          </div>
+
+          <div class="panel ranking-panel">
+            <div class="panel-head">
+              <h2>Ranking itens embalados nos ultimos 7 dias</h2>
+              <span id="ranking7Subtitle"></span>
+            </div>
+            <div id="ranking7List" class="ranking-list"></div>
           </div>
 
           <div class="panel ranking-panel">
@@ -202,6 +202,6 @@
         </div>
       </section>
     </div>
-    <script src="/app.js?v=14" type="module"></script>
+    <script src="/app.js?v=15" type="module"></script>
   </body>
 </html>

@@ -388,9 +388,70 @@ h2 {
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(220px, 0.65fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 14px;
+}
+
+.grid .chart-panel {
+  grid-column: 1 / -1;
+  order: 1;
+}
+
+.grid .ranking-panel {
+  grid-column: span 2;
+}
+
+.grid .ranking-panel:has(#rankingTodayList) {
+  order: 2;
+}
+
+.grid .ranking-panel:has(#rankingYesterdayList) {
+  order: 3;
+}
+
+.grid .ranking-panel:has(#ranking7List) {
+  order: 4;
+}
+
+.grid .ranking-panel:has(#rankingMonthList) {
+  order: 5;
+}
+
+.ranking-priority,
+.grid .ranking-panel:has(#rankingTodayList),
+.grid .ranking-panel:has(#rankingYesterdayList) {
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 78%);
+  box-shadow: 0 18px 34px rgba(217, 119, 6, 0.14);
+}
+
+.ranking-priority .panel-head h2,
+.grid .ranking-panel:has(#rankingTodayList) .panel-head h2,
+.grid .ranking-panel:has(#rankingYesterdayList) .panel-head h2 {
+  color: #92400e;
+  font-size: 18px;
+}
+
+.ranking-priority .panel-head span,
+.grid .ranking-panel:has(#rankingTodayList) .panel-head span,
+.grid .ranking-panel:has(#rankingYesterdayList) .panel-head span {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.ranking-priority .rank-row,
+.grid .ranking-panel:has(#rankingTodayList) .rank-row,
+.grid .ranking-panel:has(#rankingYesterdayList) .rank-row {
+  border-color: #fde68a;
+  background: #fffaf0;
+}
+
+.ranking-priority .rank-row strong,
+.grid .ranking-panel:has(#rankingTodayList) .rank-row strong,
+.grid .ranking-panel:has(#rankingYesterdayList) .rank-row strong {
+  color: #047857;
+  font-size: 18px;
 }
 
 .panel {
@@ -537,6 +598,11 @@ th {
   .grid,
   .kpis {
     grid-template-columns: 1fr;
+  }
+
+  .grid .chart-panel,
+  .grid .ranking-panel {
+    grid-column: 1 / -1;
   }
 
   .top-actions {
