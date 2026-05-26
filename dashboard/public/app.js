@@ -35,6 +35,8 @@ const els = {
   chartSubtitle: document.querySelector("#chartSubtitle"),
   ranking7Subtitle: document.querySelector("#ranking7Subtitle"),
   ranking7List: document.querySelector("#ranking7List"),
+  rankingTodaySubtitle: document.querySelector("#rankingTodaySubtitle"),
+  rankingTodayList: document.querySelector("#rankingTodayList"),
   rankingYesterdaySubtitle: document.querySelector("#rankingYesterdaySubtitle"),
   rankingYesterdayList: document.querySelector("#rankingYesterdayList"),
   rankingMonthSubtitle: document.querySelector("#rankingMonthSubtitle"),
@@ -247,6 +249,7 @@ function render() {
   const peopleRows = byPerson(records);
   const monthRows = byMonth(records);
   const ranking7Rows = byPerson(last7DayRecords()).slice(0, 8);
+  const rankingTodayRows = byPerson(todayRecords()).slice(0, 8);
   const rankingYesterdayRows = byPerson(yesterdayRecords()).slice(0, 8);
   const rankingMonthRows = byPerson(currentMonthRecords()).slice(0, 8);
   const previousMonthRows = byPerson(previousMonthRecords());
@@ -259,6 +262,7 @@ function render() {
   els.status.textContent = `${fmt(records.length)} lançamentos`;
   els.chartSubtitle.textContent = filterLabel();
   els.ranking7Subtitle.textContent = last7Label();
+  if (els.rankingTodaySubtitle) els.rankingTodaySubtitle.textContent = todayLabel();
   els.rankingYesterdaySubtitle.previousElementSibling.textContent = els.previousMonthTable
     ? "Ranking itens embalados no dia anterior"
     : "Ranking dia anterior";
@@ -269,6 +273,7 @@ function render() {
 
   drawMonthlyChart(monthRows);
   renderRanking(els.ranking7List, ranking7Rows);
+  renderRanking(els.rankingTodayList, rankingTodayRows);
   renderRanking(els.rankingYesterdayList, rankingYesterdayRows);
   renderRanking(els.rankingMonthList, rankingMonthRows);
   renderPreviousMonthTable(previousMonthRows);
@@ -306,6 +311,18 @@ function currentMonthRecords() {
   const month = now.getMonth() + 1;
   return state.data.records.filter(record => {
     if (record.year !== year || record.month !== month) return false;
+    return matchesRankingCommonFilters(record);
+  });
+}
+
+function todayRecords() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+  return state.data.records.filter(record => {
+    const date = new Date(record.date);
+    if (date < start || date >= end) return false;
     return matchesRankingCommonFilters(record);
   });
 }
@@ -671,6 +688,11 @@ function last7Label() {
 function currentMonthLabel() {
   const now = new Date();
   return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+}
+
+function todayLabel() {
+  const now = new Date();
+  return now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
 function yesterdayLabel() {
