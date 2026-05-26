@@ -439,6 +439,11 @@ canvas {
   overflow: auto;
 }
 
+.month-detail-panel {
+  margin-bottom: 14px;
+  border-color: #bfdbfe;
+}
+
 .inline-filters {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(160px, 0.5fr)) minmax(140px, 0.4fr);

@@ -13,7 +13,10 @@ const state = {
     fullStartDate: "",
     fullEndDate: "",
   },
+  selectedMonth: null,
 };
+
+let chartHitBoxes = [];
 
 const els = {
   year: document.querySelector("#yearFilter"),
@@ -46,6 +49,10 @@ const els = {
   fullClearFilters: document.querySelector("#fullClearFilters"),
   fullShipmentSubtitle: document.querySelector("#fullShipmentSubtitle"),
   fullShipmentSummary: document.querySelector("#fullShipmentSummary"),
+  monthDetailPanel: document.querySelector("#monthDetailPanel"),
+  monthDetailTitle: document.querySelector("#monthDetailTitle"),
+  monthDetailSubtitle: document.querySelector("#monthDetailSubtitle"),
+  monthDetailTable: document.querySelector("#monthDetailTable"),
   rulesButton: document.querySelector("#rulesButton"),
   rulesCloseButton: document.querySelector("#rulesCloseButton"),
   rulesModal: document.querySelector("#rulesModal"),
@@ -54,6 +61,15 @@ const els = {
 loadData();
 
 els.refresh?.addEventListener("click", () => loadData(true));
+els.chart?.addEventListener("click", event => {
+  const month = monthFromChartEvent(event);
+  if (!month) return;
+  state.selectedMonth = month;
+  renderMonthDetail();
+});
+els.chart?.addEventListener("mousemove", event => {
+  els.chart.style.cursor = monthFromChartEvent(event) ? "pointer" : "default";
+});
 els.rulesButton?.addEventListener("click", openRulesModal);
 els.rulesCloseButton?.addEventListener("click", closeRulesModal);
 els.rulesModal?.addEventListener("click", event => {
@@ -257,6 +273,7 @@ function render() {
   renderRanking(els.rankingMonthList, rankingMonthRows);
   renderPreviousMonthTable(previousMonthRows);
   renderTable(peopleRows);
+  renderMonthDetail();
   renderFullShipmentSummary();
 }
 
@@ -516,6 +533,47 @@ function renderTable(rows) {
   }).join("");
 }
 
+function renderMonthDetail() {
+  if (!els.monthDetailPanel || !els.monthDetailTable) return;
+
+  if (!state.selectedMonth) {
+    els.monthDetailPanel.hidden = true;
+    return;
+  }
+
+  const month = state.selectedMonth;
+  const records = state.data.records.filter(record => {
+    if (record.month !== month) return false;
+    if (state.filters.year !== "all" && record.year !== Number(state.filters.year)) return false;
+    if (state.filters.account !== "all" && record.account !== state.filters.account) return false;
+    if (state.filters.source !== "all" && record.source !== state.filters.source) return false;
+    if (state.filters.person !== "all" && record.name !== state.filters.person) return false;
+    return true;
+  });
+
+  const rows = byPerson(records);
+  const total = rows.reduce((acc, row) => acc + row.total, 0);
+  els.monthDetailPanel.hidden = false;
+  els.monthDetailTitle.textContent = `${monthNames[month - 1]} - total por colaborador`;
+  els.monthDetailSubtitle.textContent = `${fmt(total)} itens embalados`;
+  els.monthDetailTable.innerHTML = rows.length
+    ? rows.map(row => {
+      const fullShare = row.total ? `${Math.round((row.full / row.total) * 100)}%` : "0%";
+      const tinyShare = row.total ? `${Math.round((row.tiny / row.total) * 100)}%` : "0%";
+      return `
+        <tr>
+          <td>${escapeHtml(row.name)}</td>
+          <td><strong>${fmt(row.total)}</strong></td>
+          <td>${fmt(row.full)}</td>
+          <td>${fmt(row.tiny)}</td>
+          <td>${fullShare}</td>
+          <td>${tinyShare}</td>
+        </tr>
+      `;
+    }).join("")
+    : `<tr><td colspan="6">Sem itens embalados neste mes para os filtros atuais.</td></tr>`;
+}
+
 function drawMonthlyChart(rows) {
   const canvas = els.chart;
   const ctx = canvas.getContext("2d");
@@ -525,6 +583,7 @@ function drawMonthlyChart(rows) {
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
   const max = Math.max(1, ...rows.map(row => row.total));
+  chartHitBoxes = [];
 
   ctx.clearRect(0, 0, width, height);
   ctx.strokeStyle = "#d9e0ea";
@@ -549,12 +608,35 @@ function drawMonthlyChart(rows) {
     const x = pad.left + idx * (barW + gap);
     const h = (row.total / max) * plotH;
     const y = pad.top + plotH - h;
+    chartHitBoxes.push({
+      month: row.month,
+      x,
+      y: pad.top,
+      width: barW,
+      height: plotH + pad.bottom,
+    });
 
     ctx.fillStyle = "#2563eb";
     ctx.fillRect(x, y, barW, h);
     ctx.fillStyle = "#1a2433";
     ctx.fillText(row.name, x + Math.max(0, barW / 2 - 12), height - 14);
   });
+}
+
+function monthFromChartEvent(event) {
+  if (!els.chart || !chartHitBoxes.length) return null;
+  const rect = els.chart.getBoundingClientRect();
+  const scaleX = els.chart.width / rect.width;
+  const scaleY = els.chart.height / rect.height;
+  const x = (event.clientX - rect.left) * scaleX;
+  const y = (event.clientY - rect.top) * scaleY;
+  const hit = chartHitBoxes.find(box =>
+    x >= box.x &&
+    x <= box.x + box.width &&
+    y >= box.y &&
+    y <= box.y + box.height
+  );
+  return hit?.month || null;
 }
 
 function filterLabel() {
