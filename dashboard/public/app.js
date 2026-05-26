@@ -1,5 +1,7 @@
 const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const spreadsheetId = "1bS2iqiMXsXxBXpTkHYW2q2d0pM7smxfhD6e3gWtYRUo";
+const isCollaboratorPage = Boolean(document.querySelector(".collab-app"));
+const hiddenCollaboratorMonths = new Set([1, 2]);
 
 const state = {
   data: null,
@@ -64,12 +66,17 @@ loadData();
 
 els.refresh?.addEventListener("click", () => loadData(true));
 els.chart?.addEventListener("click", event => {
+  if (isCollaboratorPage) return;
   const month = monthFromChartEvent(event);
   if (!month) return;
   state.selectedMonth = month;
   renderMonthDetail();
 });
 els.chart?.addEventListener("mousemove", event => {
+  if (isCollaboratorPage) {
+    els.chart.style.cursor = "default";
+    return;
+  }
   els.chart.style.cursor = monthFromChartEvent(event) ? "pointer" : "default";
 });
 els.rulesButton?.addEventListener("click", openRulesModal);
@@ -284,6 +291,7 @@ function render() {
 
 function filteredRecords() {
   return state.data.records.filter(record => {
+    if (shouldHideCollaboratorMonth(record.month)) return false;
     if (state.filters.year !== "all" && record.year !== Number(state.filters.year)) return false;
     if (state.filters.month !== "all" && record.month !== Number(state.filters.month)) return false;
     if (state.filters.account !== "all" && record.account !== state.filters.account) return false;
@@ -291,6 +299,10 @@ function filteredRecords() {
     if (state.filters.person !== "all" && record.name !== state.filters.person) return false;
     return true;
   });
+}
+
+function shouldHideCollaboratorMonth(month) {
+  return isCollaboratorPage && hiddenCollaboratorMonths.has(Number(month));
 }
 
 function last7DayRecords() {
@@ -352,6 +364,7 @@ function previousMonthRecords() {
 }
 
 function matchesRankingCommonFilters(record) {
+  if (shouldHideCollaboratorMonth(record.month)) return false;
   if (state.filters.account !== "all" && record.account !== state.filters.account) return false;
   if (state.filters.source !== "all" && record.source !== state.filters.source) return false;
   if (state.filters.person !== "all" && record.name !== state.filters.person) return false;
@@ -379,9 +392,11 @@ function byPerson(records) {
 }
 
 function byMonth(records) {
-  const rows = monthNames.map((name, idx) => ({ month: idx + 1, name, total: 0, full: 0, tiny: 0 }));
+  const rows = monthNames
+    .map((name, idx) => ({ month: idx + 1, name, total: 0, full: 0, tiny: 0 }))
+    .filter(row => !shouldHideCollaboratorMonth(row.month));
   for (const record of records) {
-    const row = rows[record.month - 1];
+    const row = rows.find(item => item.month === record.month);
     if (!row) continue;
     row.total += record.qty;
     row[record.source.toLowerCase()] += record.qty;
@@ -553,7 +568,7 @@ function renderTable(rows) {
 function renderMonthDetail() {
   if (!els.monthDetailPanel || !els.monthDetailTable) return;
 
-  if (!state.selectedMonth) {
+  if (isCollaboratorPage || !state.selectedMonth) {
     els.monthDetailPanel.hidden = true;
     return;
   }
