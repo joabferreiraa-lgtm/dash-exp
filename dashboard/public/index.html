@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Produtividade de Embalagem</title>
     <script src="/asset-guard.js?v=1"></script>
-    <link rel="stylesheet" href="/styles.css?v=4" />
+    <link rel="stylesheet" href="/styles.css?v=5" />
   </head>
   <body>
     <div class="collab-app">
@@ -73,6 +73,28 @@
               <span id="rankingMonthSubtitle"></span>
             </div>
             <div id="rankingMonthList" class="ranking-list"></div>
+          </div>
+        </section>
+
+        <section class="panel table-panel month-detail-panel" id="monthDetailPanel" hidden>
+          <div class="panel-head">
+            <h2 id="monthDetailTitle">Detalhe do mes</h2>
+            <span id="monthDetailSubtitle"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Total de Itens</th>
+                  <th>Itens Full</th>
+                  <th>Itens Tiny</th>
+                  <th>Full %</th>
+                  <th>Tiny %</th>
+                </tr>
+              </thead>
+              <tbody id="monthDetailTable"></tbody>
+            </table>
           </div>
         </section>
 
@@ -172,6 +194,6 @@
         </div>
       </section>
     </div>
-    <script src="/app.js?v=11" type="module"></script>
+    <script src="/app.js?v=13" type="module"></script>
   </body>
 </html>

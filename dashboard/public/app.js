@@ -630,13 +630,26 @@ function monthFromChartEvent(event) {
   const scaleY = els.chart.height / rect.height;
   const x = (event.clientX - rect.left) * scaleX;
   const y = (event.clientY - rect.top) * scaleY;
-  const hit = chartHitBoxes.find(box =>
+
+  const directHit = chartHitBoxes.find(box =>
     x >= box.x &&
     x <= box.x + box.width &&
     y >= box.y &&
     y <= box.y + box.height
   );
-  return hit?.month || null;
+  if (directHit) return directHit.month;
+
+  const first = chartHitBoxes[0];
+  const last = chartHitBoxes[chartHitBoxes.length - 1];
+  const chartLeft = first.x;
+  const chartRight = last.x + last.width;
+  const chartTop = Math.min(...chartHitBoxes.map(box => box.y));
+  const chartBottom = Math.max(...chartHitBoxes.map(box => box.y + box.height));
+
+  if (x < chartLeft || x > chartRight || y < chartTop || y > chartBottom) return null;
+
+  const monthIndex = Math.floor(((x - chartLeft) / (chartRight - chartLeft)) * chartHitBoxes.length);
+  return chartHitBoxes[Math.min(monthIndex, chartHitBoxes.length - 1)]?.month || null;
 }
 
 function filterLabel() {
