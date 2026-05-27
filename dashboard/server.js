@@ -16,6 +16,7 @@ const SHEETS = {
   tinyRaw: "Tiny_raw",
   usuarios: "usuarios",
 };
+const SAO_PAULO_UTC_OFFSET_HOURS = 3;
 
 let cache = null;
 let cacheAt = 0;
@@ -243,7 +244,7 @@ function recordsFromTinyRaw(rows, usuarios) {
   return data.map(row => {
     const id = clean(row[4]);
     const name = clean(usuarios[id] || row[5]);
-    const qty = toNumber(row[10]);
+    const qty = toNumber(row[13]) || toNumber(row[10]);
     const account = clean(row[12] || "CONTA1");
     const date = toDate(row[3] || row[1] || row[2]);
     if (!name || !qty || !date) return null;
@@ -327,7 +328,7 @@ function toDate(value) {
 
   const br = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
   if (br) {
-    return new Date(
+    return dateFromSaoPauloParts(
       Number(br[3]),
       Number(br[2]) - 1,
       Number(br[1]),
@@ -340,12 +341,24 @@ function toDate(value) {
   if (/^\d+(\.\d+)?$/.test(text)) {
     const serial = Number(text);
     if (serial > 20_000) {
-      return new Date(Math.round((serial - 25569) * 86400 * 1000));
+      const utcDate = new Date(Math.round((serial - 25569) * 86400 * 1000));
+      return dateFromSaoPauloParts(
+        utcDate.getUTCFullYear(),
+        utcDate.getUTCMonth(),
+        utcDate.getUTCDate(),
+        utcDate.getUTCHours(),
+        utcDate.getUTCMinutes(),
+        utcDate.getUTCSeconds(),
+      );
     }
   }
 
   const parsed = new Date(text);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function dateFromSaoPauloParts(year, monthIndex, day, hour = 0, minute = 0, second = 0) {
+  return new Date(Date.UTC(year, monthIndex, day, hour + SAO_PAULO_UTC_OFFSET_HOURS, minute, second));
 }
 
 function clean(value) {
