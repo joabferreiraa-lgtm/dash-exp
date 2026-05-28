@@ -13,7 +13,7 @@
         <section class="topbar">
           <div>
             <h1>Produtividade de Embalagem</h1>
-            <p>Itens embalados por colaborador, periodo e origem.</p>
+            <p>Pontos por colaborador, periodo e origem.</p>
           </div>
           <div class="top-actions">
             <button class="action-button rules-button" id="rulesButton" type="button">Regras</button>
@@ -25,15 +25,15 @@
 
         <section class="kpis">
           <article>
-            <span>Total de Itens</span>
+            <span>Total de Pontos</span>
             <strong id="kpiTotal">0</strong>
           </article>
           <article>
-            <span>Itens Full</span>
+            <span>Pontos Full</span>
             <strong id="kpiFull">0</strong>
           </article>
           <article>
-            <span>Itens Tiny</span>
+            <span>Pontos Tiny</span>
             <strong id="kpiTiny">0</strong>
           </article>
           <article>
@@ -45,7 +45,7 @@
         <section class="grid">
           <div class="panel chart-panel">
             <div class="panel-head">
-              <h2>Evolucao mensal de itens embalados</h2>
+              <h2>Evolucao mensal de pontos</h2>
               <span id="chartSubtitle"></span>
             </div>
             <canvas id="monthlyChart" width="900" height="320"></canvas>
@@ -53,7 +53,7 @@
 
           <div class="panel ranking-panel ranking-priority ranking-today">
             <div class="panel-head">
-              <h2>Ranking itens embalados hoje</h2>
+              <h2>Ranking de pontos hoje</h2>
               <span id="rankingTodaySubtitle"></span>
             </div>
             <div id="rankingTodayList" class="ranking-list"></div>
@@ -61,7 +61,7 @@
 
           <div class="panel ranking-panel ranking-priority ranking-yesterday">
             <div class="panel-head">
-              <h2>Ranking itens embalados no dia anterior</h2>
+              <h2>Ranking de pontos no dia anterior</h2>
               <span id="rankingYesterdaySubtitle"></span>
             </div>
             <div id="rankingYesterdayList" class="ranking-list"></div>
@@ -69,7 +69,7 @@
 
           <div class="panel ranking-panel">
             <div class="panel-head">
-              <h2>Ranking itens embalados nos ultimos 7 dias</h2>
+              <h2>Ranking de pontos nos ultimos 7 dias</h2>
               <span id="ranking7Subtitle"></span>
             </div>
             <div id="ranking7List" class="ranking-list"></div>
@@ -77,7 +77,7 @@
 
           <div class="panel ranking-panel">
             <div class="panel-head">
-              <h2>Ranking itens embalados no mes atual</h2>
+              <h2>Ranking de pontos no mes atual</h2>
               <span id="rankingMonthSubtitle"></span>
             </div>
             <div id="rankingMonthList" class="ranking-list"></div>
@@ -94,9 +94,9 @@
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Total de Itens</th>
-                  <th>Itens Full</th>
-                  <th>Itens Tiny</th>
+                  <th>Total de Pontos</th>
+                  <th>Pontos Full</th>
+                  <th>Pontos Tiny</th>
                   <th>Full %</th>
                   <th>Tiny %</th>
                 </tr>
@@ -108,7 +108,7 @@
 
         <section class="panel table-panel">
           <div class="panel-head">
-            <h2>Mes anterior - itens embalados</h2>
+            <h2>Mes anterior - pontos</h2>
             <span id="previousMonthSubtitle"></span>
           </div>
           <div class="table-wrap">
@@ -116,9 +116,9 @@
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Total de Itens</th>
-                  <th>Itens Full</th>
-                  <th>Itens Tiny</th>
+                  <th>Total de Pontos</th>
+                  <th>Pontos Full</th>
+                  <th>Pontos Tiny</th>
                   <th>Full %</th>
                   <th>Tiny %</th>
                 </tr>
@@ -130,7 +130,7 @@
 
         <section class="panel table-panel">
           <div class="panel-head">
-            <h2>Total geral de itens por colaborador</h2>
+            <h2>Total geral de pontos por colaborador</h2>
             <span id="tableSubtitle"></span>
           </div>
           <div class="table-wrap">
@@ -138,9 +138,9 @@
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Total de Itens</th>
-                  <th>Itens Full</th>
-                  <th>Itens Tiny</th>
+                  <th>Total de Pontos</th>
+                  <th>Pontos Full</th>
+                  <th>Pontos Tiny</th>
                   <th>Full %</th>
                   <th>Tiny %</th>
                 </tr>
@@ -157,38 +157,39 @@
         <div class="rules-head">
           <div>
             <span class="eyebrow">Politica de premiacao</span>
-            <h2 id="rulesTitle">Regra por itens embalados</h2>
+            <h2 id="rulesTitle">Regra por pontos</h2>
           </div>
           <button class="icon-button" id="rulesCloseButton" type="button" aria-label="Fechar regras">x</button>
         </div>
 
         <p class="rules-intro">
-          A premiacao e calculada por item embalado, de forma progressiva por faixa.
-          Cada valor vale apenas para os itens dentro da propria faixa.
+          A premiacao e calculada por pontos, de forma progressiva por faixa.
+          Cada item embalado pode valer de 0,1 a 1 ponto, conforme a dificuldade de embalagem cadastrada na aba SKU.
+          Cada valor abaixo vale apenas para os pontos dentro da propria faixa.
         </p>
 
         <div class="rules-grid">
           <article class="rule-card">
             <span>Faixa 1</span>
-            <strong>Ate 7.000 itens</strong>
-            <b>R$ 0,01 por item</b>
+            <strong>Ate 7.000 pontos</strong>
+            <b>R$ 0,01 por ponto</b>
           </article>
           <article class="rule-card">
             <span>Faixa 2</span>
-            <strong>7.001 a 12.000 itens</strong>
-            <b>R$ 0,02 por item</b>
+            <strong>7.001 a 12.000 pontos</strong>
+            <b>R$ 0,02 por ponto</b>
           </article>
           <article class="rule-card">
             <span>Faixa 3</span>
-            <strong>Acima de 12.000 itens</strong>
-            <b>R$ 0,03 por item</b>
+            <strong>Acima de 12.000 pontos</strong>
+            <b>R$ 0,03 por ponto</b>
           </article>
         </div>
 
         <div class="example-panel">
           <div>
             <span class="eyebrow">Exemplo</span>
-            <h3>Colaborador com 14.000 itens</h3>
+            <h3>Colaborador com 14.000 pontos</h3>
           </div>
           <div class="calc-lines">
             <p><span>7.000 x R$ 0,01</span><strong>R$ 70,00</strong></p>
@@ -202,6 +203,45 @@
         </div>
       </section>
     </div>
-    <script src="/app.js?v=17" type="module"></script>
+
+    <div class="modal-backdrop" id="pointsNoticeModal" aria-hidden="true">
+      <section class="rules-modal" role="dialog" aria-modal="true" aria-labelledby="pointsNoticeTitle">
+        <div class="rules-head">
+          <div>
+            <span class="eyebrow">Aviso importante</span>
+            <h2 id="pointsNoticeTitle">Mudança para pontuação</h2>
+          </div>
+          <button class="icon-button" id="pointsNoticeCloseButton" type="button" aria-label="Fechar aviso">x</button>
+        </div>
+
+        <p class="rules-intro">
+          A dashboard agora está trabalhando por pontos. Cada item embalado vale 1 ponto, exceto itens mais fáceis e em grande quantidade, que podem valer de 0,1 a 0,5 ponto, conforme a dificuldade de embalagem.
+        </p>
+
+        <div class="example-panel">
+          <div>
+            <span class="eyebrow">Exemplo</span>
+            <h3>Pontuação por SKU</h3>
+          </div>
+          <div class="calc-lines">
+            <p><span>seringa10ml-sag-lock</span><strong>0,1 ponto</strong></p>
+            <p><span>contato1kg-frasco</span><strong>1 ponto</strong></p>
+          </div>
+        </div>
+
+        <p class="rules-intro">
+          A planilha ainda está atualizando os meses anteriores, principalmente março e abril. No momento, somente maio está correto.
+          Os resultados irão mudar devido a essa mudança para pontos.
+          Fizemos essa mudança para evitar desigualdade no cálculo quando o pedido é mais fácil.
+        </p>
+
+        <p class="rules-intro">
+          Se a pontuação ficar muito baixa e a equipe não atingir as metas, vamos reajustar os valores nas regras.
+        </p>
+
+        <button class="action-button rules-button" id="pointsNoticeOkButton" type="button">Entendi</button>
+      </section>
+    </div>
+    <script src="/app.js?v=19" type="module"></script>
   </body>
 </html>

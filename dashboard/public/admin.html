@@ -50,22 +50,22 @@
         <section class="topbar">
           <div>
             <h1>Dashboard de produtividade</h1>
-            <p>Resumo consolidado por colaborador, mes e origem.</p>
+            <p>Resumo consolidado por pontos, colaborador, mes e origem.</p>
           </div>
           <div class="status-pill" id="statusPill">Carregando</div>
         </section>
 
         <section class="kpis">
           <article>
-            <span>Total</span>
+            <span>Total de Pontos</span>
             <strong id="kpiTotal">0</strong>
           </article>
           <article>
-            <span>Full</span>
+            <span>Pontos Full</span>
             <strong id="kpiFull">0</strong>
           </article>
           <article>
-            <span>Tiny</span>
+            <span>Pontos Tiny</span>
             <strong id="kpiTiny">0</strong>
           </article>
           <article>
@@ -77,7 +77,7 @@
         <section class="grid">
           <div class="panel chart-panel">
             <div class="panel-head">
-              <h2>Evolucao mensal</h2>
+              <h2>Evolucao mensal de pontos</h2>
               <span id="chartSubtitle"></span>
             </div>
             <canvas id="monthlyChart" width="900" height="320"></canvas>
@@ -85,7 +85,7 @@
 
           <div class="panel ranking-panel">
             <div class="panel-head">
-              <h2>Ranking últimos 7 dias</h2>
+              <h2>Ranking de pontos ultimos 7 dias</h2>
               <span id="ranking7Subtitle"></span>
             </div>
             <div id="ranking7List" class="ranking-list"></div>
@@ -93,7 +93,7 @@
 
           <div class="panel ranking-panel">
             <div class="panel-head">
-              <h2>Ranking hoje</h2>
+              <h2>Ranking de pontos hoje</h2>
               <span id="rankingTodaySubtitle"></span>
             </div>
             <div id="rankingTodayList" class="ranking-list"></div>
@@ -101,7 +101,7 @@
 
           <div class="panel ranking-panel">
             <div class="panel-head">
-              <h2>Ranking mês atual</h2>
+              <h2>Ranking de pontos dia anterior</h2>
               <span id="rankingYesterdaySubtitle"></span>
             </div>
             <div id="rankingYesterdayList" class="ranking-list"></div>
@@ -109,7 +109,7 @@
 
           <div class="panel ranking-panel">
             <div class="panel-head">
-              <h2>Ranking mes atual</h2>
+              <h2>Ranking de pontos mes atual</h2>
               <span id="rankingMonthSubtitle"></span>
             </div>
             <div id="rankingMonthList" class="ranking-list"></div>
@@ -126,9 +126,9 @@
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Total</th>
-                  <th>Full</th>
-                  <th>Tiny</th>
+                  <th>Total de Pontos</th>
+                  <th>Pontos Full</th>
+                  <th>Pontos Tiny</th>
                   <th>Full %</th>
                   <th>Tiny %</th>
                 </tr>
@@ -140,7 +140,7 @@
 
         <section class="panel table-panel">
           <div class="panel-head">
-            <h2>Colaboradores</h2>
+            <h2>Pontos por colaborador</h2>
             <span id="tableSubtitle"></span>
           </div>
           <div class="table-wrap">
@@ -148,9 +148,9 @@
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Total</th>
-                  <th>Full</th>
-                  <th>Tiny</th>
+                  <th>Total de Pontos</th>
+                  <th>Pontos Full</th>
+                  <th>Pontos Tiny</th>
                   <th>Full %</th>
                   <th>Tiny %</th>
                 </tr>
@@ -184,6 +184,6 @@
         </section>
       </main>
     </div>
-    <script src="/app.js?v=17" type="module"></script>
+    <script src="/app.js?v=18" type="module"></script>
   </body>
 </html>

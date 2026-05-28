@@ -60,6 +60,9 @@ const els = {
   rulesButton: document.querySelector("#rulesButton"),
   rulesCloseButton: document.querySelector("#rulesCloseButton"),
   rulesModal: document.querySelector("#rulesModal"),
+  pointsNoticeModal: document.querySelector("#pointsNoticeModal"),
+  pointsNoticeCloseButton: document.querySelector("#pointsNoticeCloseButton"),
+  pointsNoticeOkButton: document.querySelector("#pointsNoticeOkButton"),
 };
 
 loadData();
@@ -84,8 +87,16 @@ els.rulesCloseButton?.addEventListener("click", closeRulesModal);
 els.rulesModal?.addEventListener("click", event => {
   if (event.target === els.rulesModal) closeRulesModal();
 });
+els.pointsNoticeCloseButton?.addEventListener("click", closePointsNoticeModal);
+els.pointsNoticeOkButton?.addEventListener("click", closePointsNoticeModal);
+els.pointsNoticeModal?.addEventListener("click", event => {
+  if (event.target === els.pointsNoticeModal) closePointsNoticeModal();
+});
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape") closeRulesModal();
+  if (event.key === "Escape") {
+    closeRulesModal();
+    closePointsNoticeModal();
+  }
 });
 [els.year, els.month, els.account, els.source, els.person].filter(Boolean).forEach(select => {
   select.addEventListener("change", () => {
@@ -93,6 +104,10 @@ document.addEventListener("keydown", event => {
     render();
   });
 });
+
+if (isCollaboratorPage) {
+  window.setTimeout(openPointsNoticeModal, 500);
+}
 
 els.fullShipmentSearch?.addEventListener("input", () => {
   state.filters.fullShipmentSearch = clean(els.fullShipmentSearch.value).toLowerCase();
@@ -163,6 +178,19 @@ function closeRulesModal() {
   if (!els.rulesModal) return;
   els.rulesModal.classList.remove("open");
   els.rulesModal.setAttribute("aria-hidden", "true");
+}
+
+function openPointsNoticeModal() {
+  if (!els.pointsNoticeModal) return;
+  els.pointsNoticeModal.classList.add("open");
+  els.pointsNoticeModal.setAttribute("aria-hidden", "false");
+  els.pointsNoticeOkButton?.focus();
+}
+
+function closePointsNoticeModal() {
+  if (!els.pointsNoticeModal) return;
+  els.pointsNoticeModal.classList.remove("open");
+  els.pointsNoticeModal.setAttribute("aria-hidden", "true");
 }
 
 async function fetchSheetCsv(sheetName) {
@@ -271,12 +299,12 @@ function render() {
   els.ranking7Subtitle.textContent = last7Label();
   if (els.rankingTodaySubtitle) els.rankingTodaySubtitle.textContent = todayLabel();
   els.rankingYesterdaySubtitle.previousElementSibling.textContent = els.previousMonthTable
-    ? "Ranking itens embalados no dia anterior"
-    : "Ranking dia anterior";
+    ? "Ranking de pontos no dia anterior"
+    : "Ranking de pontos dia anterior";
   els.rankingYesterdaySubtitle.textContent = yesterdayLabel();
   els.rankingMonthSubtitle.textContent = currentMonthLabel();
   if (els.previousMonthSubtitle) els.previousMonthSubtitle.textContent = previousMonthLabel();
-  els.tableSubtitle.textContent = `${fmt(peopleRows.length)} colaboradores com itens embalados`;
+  els.tableSubtitle.textContent = `${fmt(peopleRows.length)} colaboradores com pontos`;
 
   drawMonthlyChart(monthRows);
   renderRanking(els.ranking7List, ranking7Rows);
@@ -545,7 +573,7 @@ function renderPreviousMonthTable(rows) {
       </tr>
     `;
     }).join("")
-    : `<tr><td colspan="6">Sem itens embalados no mes anterior.</td></tr>`;
+    : `<tr><td colspan="6">Sem pontos no mes anterior.</td></tr>`;
 }
 
 function renderTable(rows) {
@@ -587,7 +615,7 @@ function renderMonthDetail() {
   const total = rows.reduce((acc, row) => acc + row.total, 0);
   els.monthDetailPanel.hidden = false;
   els.monthDetailTitle.textContent = `${monthNames[month - 1]} - total por colaborador`;
-  els.monthDetailSubtitle.textContent = `${fmt(total)} itens embalados`;
+  els.monthDetailSubtitle.textContent = `${fmt(total)} pontos`;
   els.monthDetailTable.innerHTML = rows.length
     ? rows.map(row => {
       const fullShare = row.total ? `${Math.round((row.full / row.total) * 100)}%` : "0%";
@@ -603,7 +631,7 @@ function renderMonthDetail() {
         </tr>
       `;
     }).join("")
-    : `<tr><td colspan="6">Sem itens embalados neste mes para os filtros atuais.</td></tr>`;
+    : `<tr><td colspan="6">Sem pontos neste mes para os filtros atuais.</td></tr>`;
 }
 
 function drawMonthlyChart(rows) {
