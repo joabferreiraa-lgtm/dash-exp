@@ -204,7 +204,7 @@ function recordsFromTinyRaw(rows, usuarios) {
   return rows.slice(1).map(row => {
     const id = clean(row[4]);
     const name = clean(usuarios[id] || row[5]);
-    const qty = toNumber(row[10]);
+    const qty = toNumber(row[13]) || toNumber(row[10]);
     const account = clean(row[12] || "CONTA1");
     const date = toDate(row[3] || row[1] || row[2]);
     if (!name || !qty || !date) return null;
