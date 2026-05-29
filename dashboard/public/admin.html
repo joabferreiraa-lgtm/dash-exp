@@ -1,11 +1,11 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Produtividade Olist</title>
     <script src="/asset-guard.js?v=1"></script>
-    <link rel="stylesheet" href="/styles.css?v=7" />
+    <link rel="stylesheet" href="/styles.css?v=11" />
   </head>
   <body>
     <div class="app">
@@ -20,6 +20,13 @@
             <span>Full + Tiny</span>
           </div>
         </div>
+
+        <nav class="sidebar-nav" aria-label="Menu do admin">
+          <button class="sidebar-nav-button active" type="button" data-admin-view="summaryView">Resumo</button>
+          <button class="sidebar-nav-button" type="button" data-admin-view="productsView">Produtos Tiny</button>
+          <button class="sidebar-nav-button" type="button" data-admin-view="payoutView">Premiação</button>
+          <button class="sidebar-nav-button" type="button" data-admin-view="maintenanceView">Manutenção</button>
+        </nav>
 
         <label>
           Ano
@@ -47,6 +54,7 @@
       </aside>
 
       <main>
+        <div class="admin-view active" id="summaryView">
         <section class="topbar">
           <div>
             <h1>Dashboard de produtividade</h1>
@@ -182,8 +190,167 @@
           </div>
           <div id="fullShipmentSummary" class="shipment-summary"></div>
         </section>
-      </main>
+
+        </div>
+
+        <div class="admin-view" id="productsView">
+          <section class="topbar products-topbar">
+            <div>
+              <h1>Produtos embalados Tiny</h1>
+              <p>Produtos consolidados por SKU, conta e periodo.</p>
+            </div>
+            <div class="status-pill" id="packedProductsSubtitle">Carregando produtos</div>
+          </section>
+
+          <section class="panel products-filter-panel">
+            <div class="panel-head">
+              <h2>Filtros de produtos</h2>
+              <span>Escolha o periodo para ver os itens embalados.</span>
+            </div>
+            <div class="inline-filters product-filters">
+              <label>
+                Periodo
+                <select id="packedProductsPeriod">
+                  <option value="today">Hoje</option>
+                  <option value="7">Ultimos 7 dias</option>
+                  <option value="30">Ultimos 30 dias</option>
+                  <option value="custom">Periodo personalizado</option>
+                </select>
+              </label>
+              <label>
+                Data inicial
+                <input id="packedProductsStartDate" type="date" />
+              </label>
+              <label>
+                Data final
+                <input id="packedProductsEndDate" type="date" />
+              </label>
+              <button id="packedProductsClearFilters" type="button">Limpar periodo</button>
+            </div>
+          </section>
+
+          <section class="panel table-panel products-table-panel">
+            <div class="panel-head">
+              <h2>Produtos por SKU</h2>
+              <span>Ordenado pela maior quantidade embalada.</span>
+            </div>
+            <div class="table-wrap products-table-wrap">
+              <table class="products-table">
+                <thead>
+                  <tr>
+                    <th>Conta</th>
+                    <th>SKU</th>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Separacoes</th>
+                  </tr>
+                </thead>
+                <tbody id="packedProductsTable"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <div class="admin-view" id="payoutView">
+          <section class="topbar payout-topbar">
+            <div>
+              <h1>Premiação mensal</h1>
+              <p>Valor total a pagar por colaborador conforme a regra progressiva por pontos.</p>
+            </div>
+            <div class="status-pill" id="payoutSubtitle">Selecione o mês</div>
+          </section>
+
+          <section class="kpis payout-kpis">
+            <article>
+              <span>Total a pagar</span>
+              <strong id="payoutTotalAmount">R$ 0,00</strong>
+            </article>
+            <article>
+              <span>Total de pontos</span>
+              <strong id="payoutTotalPoints">0</strong>
+            </article>
+            <article>
+              <span>Colaboradores</span>
+              <strong id="payoutPeople">0</strong>
+            </article>
+          </section>
+
+          <section class="panel products-filter-panel">
+            <div class="panel-head">
+              <h2>Período da premiação</h2>
+              <span>O cálculo usa os pontos acumulados no mês selecionado.</span>
+            </div>
+            <div class="inline-filters payout-filters">
+              <label>
+                Ano
+                <select id="payoutYearFilter"></select>
+              </label>
+              <label>
+                Mês
+                <select id="payoutMonthFilter"></select>
+              </label>
+              <label>
+                Colaborador
+                <select id="payoutPersonFilter"></select>
+              </label>
+            </div>
+          </section>
+
+          <section class="panel table-panel payout-table-panel">
+            <div class="panel-head">
+              <h2>Valor por colaborador</h2>
+              <span>Faixa 1 até 7.000, faixa 2 até 10.000, faixa 3 acima de 10.000 pontos.</span>
+            </div>
+            <div class="table-wrap">
+              <table class="payout-table">
+                <thead>
+                  <tr>
+                    <th>Colaborador</th>
+                    <th>Pontos</th>
+                    <th>Faixa 1</th>
+                    <th>Faixa 2</th>
+                    <th>Faixa 3</th>
+                    <th>Total a pagar</th>
+                  </tr>
+                </thead>
+                <tbody id="payoutTable"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <div class="admin-view" id="maintenanceView">
+          <section class="topbar maintenance-topbar">
+            <div>
+              <h1>Manutenção da tela colaboradores</h1>
+              <p>Oculta rankings e resultados da tela inicial, mantendo o Lançamento Full disponível.</p>
+            </div>
+            <div class="status-pill" id="maintenanceStatus">Carregando</div>
+          </section>
+
+          <section class="panel maintenance-panel">
+            <div class="panel-head">
+              <h2>Modo manutenção</h2>
+              <span>Use quando estiver ajustando regras, dados ou layout.</span>
+            </div>
+            <label class="maintenance-toggle">
+              <input id="maintenanceToggle" type="checkbox" />
+              <span>Ativar aviso de manutenção na tela dos colaboradores</span>
+            </label>
+            <label class="maintenance-message-field">
+              Mensagem exibida
+              <textarea id="maintenanceMessage" rows="4">Dashboard em manutenção. Os lançamentos Full continuam disponíveis.</textarea>
+            </label>
+            <button id="maintenanceSaveButton" type="button">Salvar manutenção</button>
+            <p class="muted" id="maintenanceFeedback"></p>
+          </section>
+        </div>      </main>
     </div>
-    <script src="/app.js?v=18" type="module"></script>
+    <script src="/app.js?v=25" type="module"></script>
   </body>
 </html>
+
+
+
+
+
+
+

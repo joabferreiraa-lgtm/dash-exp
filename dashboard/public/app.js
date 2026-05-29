@@ -1,4 +1,4 @@
-const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+﻿const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const spreadsheetId = "1bS2iqiMXsXxBXpTkHYW2q2d0pM7smxfhD6e3gWtYRUo";
 const isCollaboratorPage = Boolean(document.querySelector(".collab-app"));
 const hiddenCollaboratorMonths = new Set([1, 2]);
@@ -14,8 +14,15 @@ const state = {
     fullShipmentSearch: "",
     fullStartDate: "",
     fullEndDate: "",
+    packedProductsPeriod: "today",
+    packedProductsStartDate: "",
+    packedProductsEndDate: "",
+    payoutYear: "",
+    payoutMonth: "",
+    payoutPerson: "all",
   },
   selectedMonth: null,
+  maintenance: { enabled: false, message: "" },
 };
 
 let chartHitBoxes = [];
@@ -29,6 +36,8 @@ const els = {
   refresh: document.querySelector("#refreshButton"),
   updatedAt: document.querySelector("#updatedAt"),
   status: document.querySelector("#statusPill"),
+  adminViewButtons: document.querySelectorAll("[data-admin-view]"),
+  adminViews: document.querySelectorAll(".admin-view"),
   kpiTotal: document.querySelector("#kpiTotal"),
   kpiFull: document.querySelector("#kpiFull"),
   kpiTiny: document.querySelector("#kpiTiny"),
@@ -53,6 +62,20 @@ const els = {
   fullClearFilters: document.querySelector("#fullClearFilters"),
   fullShipmentSubtitle: document.querySelector("#fullShipmentSubtitle"),
   fullShipmentSummary: document.querySelector("#fullShipmentSummary"),
+  packedProductsPeriod: document.querySelector("#packedProductsPeriod"),
+  packedProductsStartDate: document.querySelector("#packedProductsStartDate"),
+  packedProductsEndDate: document.querySelector("#packedProductsEndDate"),
+  packedProductsClearFilters: document.querySelector("#packedProductsClearFilters"),
+  packedProductsSubtitle: document.querySelector("#packedProductsSubtitle"),
+  packedProductsTable: document.querySelector("#packedProductsTable"),
+  payoutYear: document.querySelector("#payoutYearFilter"),
+  payoutMonth: document.querySelector("#payoutMonthFilter"),
+  payoutPerson: document.querySelector("#payoutPersonFilter"),
+  payoutSubtitle: document.querySelector("#payoutSubtitle"),
+  payoutTotalAmount: document.querySelector("#payoutTotalAmount"),
+  payoutTotalPoints: document.querySelector("#payoutTotalPoints"),
+  payoutPeople: document.querySelector("#payoutPeople"),
+  payoutTable: document.querySelector("#payoutTable"),
   monthDetailPanel: document.querySelector("#monthDetailPanel"),
   monthDetailTitle: document.querySelector("#monthDetailTitle"),
   monthDetailSubtitle: document.querySelector("#monthDetailSubtitle"),
@@ -63,11 +86,22 @@ const els = {
   pointsNoticeModal: document.querySelector("#pointsNoticeModal"),
   pointsNoticeCloseButton: document.querySelector("#pointsNoticeCloseButton"),
   pointsNoticeOkButton: document.querySelector("#pointsNoticeOkButton"),
+  maintenanceScreen: document.querySelector("#maintenanceScreen"),
+  maintenanceMessageText: document.querySelector("#maintenanceMessageText"),
+  maintenanceToggle: document.querySelector("#maintenanceToggle"),
+  maintenanceMessage: document.querySelector("#maintenanceMessage"),
+  maintenanceSaveButton: document.querySelector("#maintenanceSaveButton"),
+  maintenanceStatus: document.querySelector("#maintenanceStatus"),
+  maintenanceFeedback: document.querySelector("#maintenanceFeedback"),
 };
 
+initMaintenanceControls();
 loadData();
 
 els.refresh?.addEventListener("click", () => loadData(true));
+els.adminViewButtons?.forEach(button => {
+  button.addEventListener("click", () => setAdminView(button.dataset.adminView));
+});
 els.chart?.addEventListener("click", event => {
   if (isCollaboratorPage) return;
   const month = monthFromChartEvent(event);
@@ -131,7 +165,103 @@ els.fullClearFilters?.addEventListener("click", () => {
   renderFullShipmentSummary();
 });
 
+els.packedProductsPeriod?.addEventListener("change", () => {
+  state.filters.packedProductsPeriod = els.packedProductsPeriod.value;
+  renderPackedProductsSummary();
+  renderPayoutSummary();
+});
+
+[els.packedProductsStartDate, els.packedProductsEndDate].filter(Boolean).forEach(input => {
+  input.addEventListener("change", () => {
+    state.filters[input.dataset.filter] = input.value;
+    state.filters.packedProductsPeriod = "custom";
+    if (els.packedProductsPeriod) els.packedProductsPeriod.value = "custom";
+    renderPackedProductsSummary();
+  });
+});
+
+[els.payoutYear, els.payoutMonth, els.payoutPerson].filter(Boolean).forEach(select => {
+  select.addEventListener("change", () => {
+    state.filters[select.dataset.filter] = select.value;
+    renderPayoutSummary();
+  });
+});
+
+els.packedProductsClearFilters?.addEventListener("click", () => {
+  state.filters.packedProductsPeriod = "today";
+  state.filters.packedProductsStartDate = "";
+  state.filters.packedProductsEndDate = "";
+  els.packedProductsPeriod.value = "today";
+  els.packedProductsStartDate.value = "";
+  els.packedProductsEndDate.value = "";
+  renderPackedProductsSummary();
+  renderPayoutSummary();
+});
+
+async function loadMaintenanceState() {
+  try {
+    const response = await fetch("/api/maintenance");
+    const data = await response.json();
+    state.maintenance = {
+      enabled: Boolean(data.enabled),
+      message: data.message || "Dashboard em manutenção. Os lançamentos Full continuam disponíveis."
+    };
+  } catch {
+    state.maintenance = { enabled: false, message: "" };
+  }
+
+  updateMaintenanceControls();
+}
+
+function initMaintenanceControls() {
+  els.maintenanceSaveButton?.addEventListener("click", saveMaintenanceState);
+}
+
+function updateMaintenanceControls() {
+  if (els.maintenanceToggle) els.maintenanceToggle.checked = state.maintenance.enabled;
+  if (els.maintenanceMessage) els.maintenanceMessage.value = state.maintenance.message;
+  if (els.maintenanceStatus) els.maintenanceStatus.textContent = state.maintenance.enabled ? "Ativo" : "Desativado";
+}
+
+async function saveMaintenanceState() {
+  const enabled = Boolean(els.maintenanceToggle?.checked);
+  const message = els.maintenanceMessage?.value || "Dashboard em manutenção. Os lançamentos Full continuam disponíveis.";
+  if (els.maintenanceFeedback) els.maintenanceFeedback.textContent = "Salvando...";
+
+  try {
+    const response = await fetch("/api/maintenance", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ enabled, message })
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) throw new Error(data.error || "Não foi possível salvar.");
+    state.maintenance = { enabled: Boolean(data.enabled), message: data.message || message };
+    updateMaintenanceControls();
+    if (els.maintenanceFeedback) els.maintenanceFeedback.textContent = enabled ? "Manutenção ativada." : "Manutenção desativada.";
+  } catch (error) {
+    if (els.maintenanceFeedback) els.maintenanceFeedback.textContent = error.message || "Erro ao salvar manutenção.";
+  }
+}
+
+function showMaintenanceScreen() {
+  document.querySelectorAll(".dashboard-content").forEach(section => { section.hidden = true; });
+  if (els.maintenanceScreen) els.maintenanceScreen.hidden = false;
+  if (els.maintenanceMessageText) els.maintenanceMessageText.textContent = state.maintenance.message;
+  if (els.status) els.status.textContent = "Manutenção";
+}
+
+function showDashboardContent() {
+  document.querySelectorAll(".dashboard-content").forEach(section => { section.hidden = false; });
+  if (els.maintenanceScreen) els.maintenanceScreen.hidden = true;
+}
 async function loadData(force = false) {
+  await loadMaintenanceState();
+  if (isCollaboratorPage && state.maintenance.enabled) {
+    showMaintenanceScreen();
+    return;
+  }
+  showDashboardContent();
   if (els.status) els.status.textContent = "Atualizando";
   let data;
   try {
@@ -142,8 +272,41 @@ async function loadData(force = false) {
     data = await loadDirectFromSheets();
   }
   state.data = data;
+  state.data.productRecords = [];
   setupFilters();
   render();
+  if (els.packedProductsTable) loadPackedProductsData(force);
+}
+
+function setAdminView(viewId) {
+  if (!viewId) return;
+  els.adminViews?.forEach(view => {
+    view.classList.toggle("active", view.id === viewId);
+  });
+  els.adminViewButtons?.forEach(button => {
+    button.classList.toggle("active", button.dataset.adminView === viewId);
+  });
+
+  if (viewId === "payoutView") {
+    renderPayoutSummary();
+  }
+
+  if (viewId === "productsView") {
+    loadPackedProductsData(false);
+  }
+}
+async function loadPackedProductsData(force = false) {
+  try {
+    const response = await fetch(`/api/packed-products${force ? "?refresh=1" : ""}`);
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    state.data.productRecords = data.productRecords || [];
+  } catch (error) {
+    state.data.productRecords = await loadPackedProductsDirectFromSheets();
+  }
+
+  renderPackedProductsSummary();
+  renderPayoutSummary();
 }
 
 async function loadDirectFromSheets() {
@@ -165,6 +328,15 @@ async function loadDirectFromSheets() {
     accounts: [...new Set(records.map(r => r.account).filter(Boolean))].sort(),
     people: [...new Set(records.map(r => r.name).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")),
   };
+}
+
+async function loadPackedProductsDirectFromSheets() {
+  const [tinyItensRows, usuariosRows] = await Promise.all([
+    fetchSheetCsv("Tiny_itens"),
+    fetchSheetCsv("usuarios"),
+  ]);
+  const usuarios = buildUsuariosMap(usuariosRows);
+  return recordsFromTinyItens(tinyItensRows, usuarios);
 }
 
 function openRulesModal() {
@@ -240,6 +412,40 @@ function recordsFromTinyRaw(rows, usuarios) {
   }).filter(Boolean);
 }
 
+function recordsFromTinyItens(rows, usuarios) {
+  return rows.slice(1).map(row => {
+    const id = clean(row[3]);
+    const name = clean(usuarios[id] || row[4]);
+    const rawDate = row[1];
+    const date = toDate(rawDate);
+    const key = sheetDateKey(rawDate) || dateKey(date);
+    const account = clean(row[2] || "CONTA1");
+    const sku = clean(row[8]);
+    const description = clean(row[9]);
+    const qty = toNumber(row[10]);
+    const separationId = clean(row[0]);
+    const saleNumber = clean(row[6]);
+    const client = clean(row[7]);
+
+    if (!date || !account || !sku || !qty) return null;
+    return {
+      source: "Tiny",
+      account,
+      name,
+      sku,
+      description,
+      qty,
+      separationId,
+      saleNumber,
+      client,
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      date: date.toISOString(),
+      dateKey: key,
+    };
+  }).filter(Boolean);
+}
+
 function buildUsuariosMap(rows) {
   const map = {};
   for (const row of rows.slice(1)) {
@@ -261,14 +467,36 @@ function setupFilters() {
   fillSelect(els.account, "account", [["all", "Todas"], ...accounts.map(account => [account, account])]);
   fillSelect(els.source, "source", [["all", "Full + Tiny"], ["Full", "Apenas Full"], ["Tiny", "Apenas Tiny"]]);
   fillSelect(els.person, "person", [["all", "Todos"], ...people.map(person => [person, person])]);
+  setupPayoutFilters(years);
   if (els.fullStartDate) els.fullStartDate.dataset.filter = "fullStartDate";
   if (els.fullEndDate) els.fullEndDate.dataset.filter = "fullEndDate";
+  if (els.packedProductsStartDate) els.packedProductsStartDate.dataset.filter = "packedProductsStartDate";
+  if (els.packedProductsEndDate) els.packedProductsEndDate.dataset.filter = "packedProductsEndDate";
 
   if (els.year) {
     els.year.value = state.filters.year;
   }
+  if (els.packedProductsPeriod) {
+    els.packedProductsPeriod.value = state.filters.packedProductsPeriod;
+  }
 }
 
+function setupPayoutFilters(years) {
+  if (!els.payoutYear || !els.payoutMonth || !els.payoutPerson) return;
+
+  const now = new Date();
+  const yearOptions = years.length ? years : [now.getFullYear()];
+  if (!state.filters.payoutYear) {
+    state.filters.payoutYear = String(yearOptions.includes(now.getFullYear()) ? now.getFullYear() : yearOptions[0]);
+  }
+  if (!state.filters.payoutMonth) {
+    state.filters.payoutMonth = String(now.getMonth() + 1);
+  }
+
+  fillSelect(els.payoutYear, "payoutYear", yearOptions.map(year => [String(year), String(year)]));
+  fillSelect(els.payoutMonth, "payoutMonth", monthNames.map((name, idx) => [String(idx + 1), name]));
+  fillSelect(els.payoutPerson, "payoutPerson", [["all", "Todos"], ...state.data.people.map(person => [person, person])]);
+}
 function fillSelect(select, filter, options) {
   if (!select) return;
   select.dataset.filter = filter;
@@ -294,7 +522,7 @@ function render() {
   els.kpiTiny.textContent = fmt(totals.tiny);
   els.kpiPeople.textContent = fmt(peopleRows.length);
   els.updatedAt.textContent = `Atualizado ${new Date(state.data.updatedAt).toLocaleString("pt-BR")}`;
-  els.status.textContent = `${fmt(records.length)} lançamentos`;
+  els.status.textContent = `${fmt(records.length)} lanÃ§amentos`;
   els.chartSubtitle.textContent = filterLabel();
   els.ranking7Subtitle.textContent = last7Label();
   if (els.rankingTodaySubtitle) els.rankingTodaySubtitle.textContent = todayLabel();
@@ -315,6 +543,8 @@ function render() {
   renderTable(peopleRows);
   renderMonthDetail();
   renderFullShipmentSummary();
+  renderPackedProductsSummary();
+  renderPayoutSummary();
 }
 
 function filteredRecords() {
@@ -555,6 +785,169 @@ function buildFullShipmentRows() {
     .sort((a, b) => b.latestDate - a.latestDate || a.envio.localeCompare(b.envio, "pt-BR", { numeric: true }));
 }
 
+function renderPackedProductsSummary() {
+  if (!els.packedProductsTable) return;
+
+  const records = filteredPackedProductRecords();
+  const rows = byPackedProduct(records);
+  const totalQty = rows.reduce((acc, row) => acc + row.qty, 0);
+
+  els.packedProductsSubtitle.textContent = `${fmt(totalQty)} produtos - ${packedProductsPeriodLabel()}`;
+  els.packedProductsTable.innerHTML = rows.length
+    ? rows.map(row => `
+      <tr>
+        <td><span class="account-pill">${escapeHtml(row.account)}</span></td>
+        <td class="sku-cell"><strong>${escapeHtml(row.sku)}</strong></td>
+        <td class="product-name-cell">${escapeHtml(row.description || "-")}</td>
+        <td class="numeric-cell"><strong>${fmt(row.qty)}</strong></td>
+        <td class="numeric-cell">${fmt(row.separations)}</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="5">Sem produtos embalados para os filtros selecionados.</td></tr>`;
+}
+
+function filteredPackedProductRecords() {
+  const { startKey, endKey } = packedProductsDateRange();
+  const records = state.data.productRecords || [];
+
+  return records.filter(record => {
+    const recordKey = record.dateKey || dateKey(record.date);
+    if (!recordKey) return false;
+    if (startKey && recordKey < startKey) return false;
+    if (endKey && recordKey > endKey) return false;
+    if (state.filters.account !== "all" && record.account !== state.filters.account) return false;
+    if (state.filters.person !== "all" && record.name !== state.filters.person) return false;
+    return true;
+  });
+}
+
+function packedProductsDateRange() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const period = state.filters.packedProductsPeriod;
+
+  if (period === "custom") {
+    return {
+      startKey: state.filters.packedProductsStartDate || null,
+      endKey: state.filters.packedProductsEndDate || null,
+    };
+  }
+
+  if (period === "7") {
+    return {
+      startKey: dateKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)),
+      endKey: dateKey(today),
+    };
+  }
+
+  if (period === "30") {
+    return {
+      startKey: dateKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29)),
+      endKey: dateKey(today),
+    };
+  }
+
+  const todayKey = dateKey(today);
+  return { startKey: todayKey, endKey: todayKey };
+}
+
+function packedProductsPeriodLabel() {
+  const period = state.filters.packedProductsPeriod;
+  if (period === "7") return "Ãºltimos 7 dias";
+  if (period === "30") return "Ãºltimos 30 dias";
+  if (period === "custom") {
+    const start = state.filters.packedProductsStartDate || "inÃ­cio";
+    const end = state.filters.packedProductsEndDate || "hoje";
+    return `${formatInputDate(start)} a ${formatInputDate(end)}`;
+  }
+  return "hoje";
+}
+
+function byPackedProduct(records) {
+  const map = new Map();
+  for (const record of records) {
+    const key = `${record.account}|||${record.sku}|||${record.description}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        account: record.account,
+        sku: record.sku,
+        description: record.description,
+        qty: 0,
+        separationIds: new Set(),
+      });
+    }
+
+    const row = map.get(key);
+    row.qty += record.qty;
+    if (record.separationId) row.separationIds.add(record.separationId);
+  }
+
+  return [...map.values()]
+    .map(row => ({ ...row, separations: row.separationIds.size }))
+    .sort((a, b) => b.qty - a.qty || a.account.localeCompare(b.account, "pt-BR") || a.sku.localeCompare(b.sku, "pt-BR", { numeric: true }));
+}
+
+function renderPayoutSummary() {
+  if (!els.payoutTable || !state.data) return;
+
+  const year = Number(state.filters.payoutYear || new Date().getFullYear());
+  const month = Number(state.filters.payoutMonth || new Date().getMonth() + 1);
+  const records = state.data.records.filter(record => {
+    if (record.year !== year || record.month !== month) return false;
+    if (state.filters.account !== "all" && record.account !== state.filters.account) return false;
+    if (state.filters.source !== "all" && record.source !== state.filters.source) return false;
+    if (state.filters.person !== "all" && record.name !== state.filters.person) return false;
+    if (state.filters.payoutPerson !== "all" && record.name !== state.filters.payoutPerson) return false;
+    return true;
+  });
+
+  const rows = byPerson(records).map(row => ({ ...row, payout: calculatePayout(row.total) }));
+  const totalPoints = rows.reduce((acc, row) => acc + row.total, 0);
+  const totalAmount = rows.reduce((acc, row) => acc + row.payout.total, 0);
+
+  els.payoutSubtitle.textContent = `${monthNames[month - 1]} ${year}`;
+  els.payoutTotalAmount.textContent = formatCurrency(totalAmount);
+  els.payoutTotalPoints.textContent = fmtPoints(totalPoints);
+  els.payoutPeople.textContent = fmt(rows.length);
+  els.payoutTable.innerHTML = rows.length
+    ? rows.map(row => `
+      <tr>
+        <td>${escapeHtml(row.name)}</td>
+        <td><strong>${fmtPoints(row.total)}</strong></td>
+        <td>${formatCurrency(row.payout.tier1)}</td>
+        <td>${formatCurrency(row.payout.tier2)}</td>
+        <td>${formatCurrency(row.payout.tier3)}</td>
+        <td><strong>${formatCurrency(row.payout.total)}</strong></td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="6">Sem pontos para o mês selecionado.</td></tr>`;
+}
+
+function calculatePayout(points) {
+  const tier1Points = Math.min(points, 7000);
+  const tier2Points = Math.min(Math.max(points - 7000, 0), 3000);
+  const tier3Points = Math.max(points - 10000, 0);
+  const tier1 = tier1Points * 0.02;
+  const tier2 = tier2Points * 0.03;
+  const tier3 = tier3Points * 0.04;
+  return { tier1, tier2, tier3, total: tier1 + tier2 + tier3 };
+}
+
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function fmtPoints(value) {
+  return Number(value || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: Number.isInteger(Number(value || 0)) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
 function renderPreviousMonthTable(rows) {
   if (!els.previousMonthTable) return;
 
@@ -719,7 +1112,7 @@ function filterLabel() {
   if (state.filters.account !== "all") parts.push(state.filters.account);
   if (state.filters.source !== "all") parts.push(state.filters.source);
   if (state.filters.person !== "all") parts.push(state.filters.person);
-  return parts.length ? parts.join(" · ") : "Todos os dados";
+  return parts.length ? parts.join(" Â· ") : "Todos os dados";
 }
 
 function last7Label() {
@@ -760,6 +1153,41 @@ function formatDateTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function dateKey(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const map = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+function sheetDateKey(value) {
+  const text = clean(value);
+  if (!text) return "";
+
+  const br = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (br) return `${br[3]}-${br[2].padStart(2, "0")}-${br[1].padStart(2, "0")}`;
+
+  const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
+
+  return "";
+}
+
+function formatInputDate(value) {
+  if (!value || value === "inÃ­cio" || value === "hoje") return value;
+  const [year, month, day] = String(value).split("-");
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
 }
 
 function fmt(value) {
@@ -854,3 +1282,11 @@ function toDate(value) {
 function clean(value) {
   return String(value ?? "").trim().replace(/\s+/g, " ");
 }
+
+
+
+
+
+
+
+
