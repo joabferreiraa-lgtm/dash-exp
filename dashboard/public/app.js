@@ -147,7 +147,10 @@ document.addEventListener("keydown", event => {
 });
 
 if (isCollaboratorPage) {
-  window.setTimeout(openPointsNoticeModal, 500);
+  window.setTimeout(async () => {
+    await loadMaintenanceState();
+    openPointsNoticeModal();
+  }, 500);
 }
 
 els.fullShipmentSearch?.addEventListener("input", () => {
@@ -256,11 +259,15 @@ function showMaintenanceScreen() {
   if (els.maintenanceScreen) els.maintenanceScreen.hidden = false;
   if (els.maintenanceMessageText) els.maintenanceMessageText.textContent = state.maintenance.message;
   if (els.status) els.status.textContent = "Manutenção";
+  if (els.rulesButton) els.rulesButton.hidden = true;
+  closePointsNoticeModal();
+  closeRulesModal();
 }
 
 function showDashboardContent() {
   document.querySelectorAll(".dashboard-content").forEach(section => { section.hidden = false; });
   if (els.maintenanceScreen) els.maintenanceScreen.hidden = true;
+  if (els.rulesButton) els.rulesButton.hidden = false;
 }
 async function loadData(force = false) {
   await loadMaintenanceState();
@@ -347,6 +354,7 @@ async function loadPackedProductsDirectFromSheets() {
 }
 
 function openRulesModal() {
+  if (isCollaboratorPage && state.maintenance.enabled) return;
   if (!els.rulesModal) return;
   els.rulesModal.classList.add("open");
   els.rulesModal.setAttribute("aria-hidden", "false");
@@ -360,6 +368,7 @@ function closeRulesModal() {
 }
 
 function openPointsNoticeModal() {
+  if (isCollaboratorPage && state.maintenance.enabled) return;
   if (!els.pointsNoticeModal) return;
   els.pointsNoticeModal.classList.add("open");
   els.pointsNoticeModal.setAttribute("aria-hidden", "false");
@@ -1289,6 +1298,7 @@ function toDate(value) {
 function clean(value) {
   return String(value ?? "").trim().replace(/\s+/g, " ");
 }
+
 
 
 
