@@ -940,9 +940,9 @@ function renderPayoutSummary() {
 }
 
 function calculatePayout(points) {
-  const tier1Points = Math.min(points, 7000);
-  const tier2Points = Math.min(Math.max(points - 7000, 0), 3000);
-  const tier3Points = Math.max(points - 10000, 0);
+  const tier1Points = Math.min(points, 8000);
+  const tier2Points = Math.min(Math.max(points - 8000, 0), 4000);
+  const tier3Points = Math.max(points - 12000, 0);
   const tier1 = tier1Points * 0.02;
   const tier2 = tier2Points * 0.03;
   const tier3 = tier3Points * 0.04;
