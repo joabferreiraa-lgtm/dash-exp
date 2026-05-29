@@ -1,5 +1,5 @@
-import http from "node:http";
-import { readFile } from "node:fs/promises";
+﻿import http from "node:http";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,12 +14,15 @@ const ADMIN_PASSWORD = env.ADMIN_PASSWORD || "";
 const SHEETS = {
   full: "FULL",
   tinyRaw: "Tiny_raw",
+  tinyItens: "Tiny_itens",
   usuarios: "usuarios",
 };
 const SAO_PAULO_UTC_OFFSET_HOURS = 3;
 
 let cache = null;
 let cacheAt = 0;
+let packedProductsCache = null;
+let packedProductsCacheAt = 0;
 const CACHE_MS = 45_000;
 
 const server = http.createServer(async (req, res) => {
@@ -33,6 +36,51 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (url.pathname === "/api/packed-products") {
+      if (!isAdminAuthorized(req)) {
+        requestAdminPassword(res);
+        return;
+      }
+
+      const force = url.searchParams.get("refresh") === "1";
+      const data = await getPackedProductsData(force);
+      sendJson(res, data);
+      return;
+    }
+
+
+    if (url.pathname === "/api/maintenance") {
+      const config = await readConfig();
+
+      if (req.method === "GET") {
+        sendJson(res, {
+          enabled: Boolean(config.maintenanceMode),
+          message: config.maintenanceMessage || "Dashboard em manutenção. Os lançamentos Full continuam disponíveis."
+        });
+        return;
+      }
+
+      if (req.method === "POST") {
+        if (!isAdminAuthorized(req)) {
+          requestAdminPassword(res);
+          return;
+        }
+
+        const payload = await readRequestJson(req);
+        const updated = {
+          ...config,
+          maintenanceMode: Boolean(payload.enabled),
+          maintenanceMessage: String(payload.message || "Dashboard em manutenção. Os lançamentos Full continuam disponíveis.").trim()
+        };
+        await writeConfig(updated);
+        sendJson(res, {
+          ok: true,
+          enabled: updated.maintenanceMode,
+          message: updated.maintenanceMessage
+        });
+        return;
+      }
+    }
     if (url.pathname === "/api/config") {
       const config = await readConfig();
       sendJson(res, {
@@ -68,19 +116,19 @@ const server = http.createServer(async (req, res) => {
         if (result.ok && (!result.row || typeof result.qtdTotal === "undefined")) {
           sendJson(res, {
             ok: false,
-            error: `O Web App respondeu sem confirmar a linha inserida. Versão recebida: ${result.version || "sem versão"}. Confira se existe só uma função doPost(e) e reimplante o Apps Script com full_entry_webapp.gs v3.`,
+            error: `O Web App respondeu sem confirmar a linha inserida. VersÃ£o recebida: ${result.version || "sem versÃ£o"}. Confira se existe sÃ³ uma funÃ§Ã£o doPost(e) e reimplante o Apps Script com full_entry_webapp.gs v3.`,
             raw: result,
           }, 502);
           return;
         }
         sendJson(res, result, response.ok ? 200 : response.status);
       } catch {
-        const looksLikeDriveError = text.includes("Google Drive") || text.includes("Não foi possível abrir");
+        const looksLikeDriveError = text.includes("Google Drive") || text.includes("NÃ£o foi possÃ­vel abrir");
         sendJson(res, {
           ok: false,
           error: looksLikeDriveError
-            ? "A URL configurada não está abrindo o Web App. Copie novamente a URL /exec da implantação que funcionou no navegador."
-            : "O Web App retornou uma resposta que não é JSON.",
+            ? "A URL configurada nÃ£o estÃ¡ abrindo o Web App. Copie novamente a URL /exec da implantaÃ§Ã£o que funcionou no navegador."
+            : "O Web App retornou uma resposta que nÃ£o Ã© JSON.",
           raw: text.slice(0, 500)
         }, response.ok ? 502 : response.status);
       }
@@ -152,16 +200,46 @@ async function getDashboardData(force = false) {
   return cache;
 }
 
+async function getPackedProductsData(force = false) {
+  if (!force && packedProductsCache && Date.now() - packedProductsCacheAt < CACHE_MS) return packedProductsCache;
+
+  const [tinyItensRows, usuariosRows] = await Promise.all([
+    fetchSheet(SHEETS.tinyItens),
+    fetchSheet(SHEETS.usuarios),
+  ]);
+
+  const usuarios = buildUsuariosMap(usuariosRows);
+  const productRecords = recordsFromTinyItens(tinyItensRows, usuarios);
+  const updatedAt = new Date().toISOString();
+
+  packedProductsCache = { updatedAt, productRecords, counts: { tinyItensRows: tinyItensRows.length } };
+  packedProductsCacheAt = Date.now();
+  return packedProductsCache;
+}
+
 async function readConfig() {
-  if (env.FULL_ENTRY_WEB_APP_URL) {
-    return { fullEntryWebAppUrl: env.FULL_ENTRY_WEB_APP_URL };
-  }
+  let config = {};
 
   try {
-    return JSON.parse(await readFile(configPath, "utf8"));
+    config = JSON.parse(await readFile(configPath, "utf8"));
   } catch {
-    return { fullEntryWebAppUrl: "" };
+    config = {};
   }
+
+  if (env.FULL_ENTRY_WEB_APP_URL) {
+    config.fullEntryWebAppUrl = env.FULL_ENTRY_WEB_APP_URL;
+  }
+
+  return {
+    fullEntryWebAppUrl: "",
+    maintenanceMode: false,
+    maintenanceMessage: "Dashboard em manutenção. Os lançamentos Full continuam disponíveis.",
+    ...config
+  };
+}
+
+async function writeConfig(config) {
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
 }
 
 async function getRecentFullEntries() {
@@ -204,7 +282,7 @@ async function fetchSheet(sheetName) {
   const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Não consegui ler a aba ${sheetName}: HTTP ${response.status}`);
+    throw new Error(`NÃ£o consegui ler a aba ${sheetName}: HTTP ${response.status}`);
   }
   const csv = await response.text();
   return parseCsv(csv);
@@ -256,6 +334,41 @@ function recordsFromTinyRaw(rows, usuarios) {
       year: date.getFullYear(),
       month: date.getMonth() + 1,
       date: date.toISOString(),
+    };
+  }).filter(Boolean);
+}
+
+function recordsFromTinyItens(rows, usuarios) {
+  const data = rows.slice(1);
+  return data.map(row => {
+    const id = clean(row[3]);
+    const name = clean(usuarios[id] || row[4]);
+    const rawDate = row[1];
+    const date = toDate(rawDate);
+    const key = sheetDateKey(rawDate) || dateKey(date);
+    const account = clean(row[2] || "CONTA1");
+    const sku = clean(row[8]);
+    const description = clean(row[9]);
+    const qty = toNumber(row[10]);
+    const separationId = clean(row[0]);
+    const saleNumber = clean(row[6]);
+    const client = clean(row[7]);
+
+    if (!date || !account || !sku || !qty) return null;
+    return {
+      source: "Tiny",
+      account,
+      name,
+      sku,
+      description,
+      qty,
+      separationId,
+      saleNumber,
+      client,
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      date: date.toISOString(),
+      dateKey: key,
     };
   }).filter(Boolean);
 }
@@ -361,6 +474,33 @@ function dateFromSaoPauloParts(year, monthIndex, day, hour = 0, minute = 0, seco
   return new Date(Date.UTC(year, monthIndex, day, hour + SAO_PAULO_UTC_OFFSET_HOURS, minute, second));
 }
 
+function sheetDateKey(value) {
+  const text = clean(value);
+  if (!text) return "";
+
+  const br = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (br) return `${br[3]}-${br[2].padStart(2, "0")}-${br[1].padStart(2, "0")}`;
+
+  const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
+
+  return "";
+}
+
+function dateKey(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(date);
+  const map = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
 function clean(value) {
   return String(value ?? "").trim().replace(/\s+/g, " ");
 }
@@ -368,7 +508,7 @@ function clean(value) {
 async function serveStatic(res, requestPath) {
   const safePath = path.normalize(decodeURIComponent(requestPath)).replace(/^(\.\.[/\\])+/, "");
   const fullPath = path.join(publicDir, safePath);
-  if (!fullPath.startsWith(publicDir)) throw new Error("Caminho inválido.");
+  if (!fullPath.startsWith(publicDir)) throw new Error("Caminho invÃ¡lido.");
 
   const body = await readFile(fullPath);
   const ext = path.extname(fullPath).toLowerCase();
@@ -390,3 +530,5 @@ function sendJson(res, data, status = 200) {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(data));
 }
+
+
