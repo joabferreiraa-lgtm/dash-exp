@@ -86,6 +86,7 @@ const els = {
   pointsNoticeModal: document.querySelector("#pointsNoticeModal"),
   pointsNoticeCloseButton: document.querySelector("#pointsNoticeCloseButton"),
   pointsNoticeOkButton: document.querySelector("#pointsNoticeOkButton"),
+  pointsNoticeRulesButton: document.querySelector("#pointsNoticeRulesButton"),
   maintenanceScreen: document.querySelector("#maintenanceScreen"),
   maintenanceMessageText: document.querySelector("#maintenanceMessageText"),
   maintenanceToggle: document.querySelector("#maintenanceToggle"),
@@ -123,6 +124,12 @@ els.rulesModal?.addEventListener("click", event => {
 });
 els.pointsNoticeCloseButton?.addEventListener("click", closePointsNoticeModal);
 els.pointsNoticeOkButton?.addEventListener("click", closePointsNoticeModal);
+els.pointsNoticeRulesButton?.addEventListener("click", event => {
+  event.preventDefault();
+  event.stopPropagation();
+  closePointsNoticeModal();
+  window.setTimeout(openRulesModal, 80);
+});
 els.pointsNoticeModal?.addEventListener("click", event => {
   if (event.target === els.pointsNoticeModal) closePointsNoticeModal();
 });
@@ -522,7 +529,7 @@ function render() {
   els.kpiTiny.textContent = fmt(totals.tiny);
   els.kpiPeople.textContent = fmt(peopleRows.length);
   els.updatedAt.textContent = `Atualizado ${new Date(state.data.updatedAt).toLocaleString("pt-BR")}`;
-  els.status.textContent = `${fmt(records.length)} lanÃ§amentos`;
+  els.status.textContent = `${fmt(records.length)} lançamentos`;
   els.chartSubtitle.textContent = filterLabel();
   els.ranking7Subtitle.textContent = last7Label();
   if (els.rankingTodaySubtitle) els.rankingTodaySubtitle.textContent = todayLabel();
@@ -853,10 +860,10 @@ function packedProductsDateRange() {
 
 function packedProductsPeriodLabel() {
   const period = state.filters.packedProductsPeriod;
-  if (period === "7") return "Ãºltimos 7 dias";
-  if (period === "30") return "Ãºltimos 30 dias";
+  if (period === "7") return "últimos 7 dias";
+  if (period === "30") return "últimos 30 dias";
   if (period === "custom") {
-    const start = state.filters.packedProductsStartDate || "inÃ­cio";
+    const start = state.filters.packedProductsStartDate || "início";
     const end = state.filters.packedProductsEndDate || "hoje";
     return `${formatInputDate(start)} a ${formatInputDate(end)}`;
   }
@@ -1112,7 +1119,7 @@ function filterLabel() {
   if (state.filters.account !== "all") parts.push(state.filters.account);
   if (state.filters.source !== "all") parts.push(state.filters.source);
   if (state.filters.person !== "all") parts.push(state.filters.person);
-  return parts.length ? parts.join(" Â· ") : "Todos os dados";
+  return parts.length ? parts.join(" · ") : "Todos os dados";
 }
 
 function last7Label() {
@@ -1184,7 +1191,7 @@ function sheetDateKey(value) {
 }
 
 function formatInputDate(value) {
-  if (!value || value === "inÃ­cio" || value === "hoje") return value;
+  if (!value || value === "início" || value === "hoje") return value;
   const [year, month, day] = String(value).split("-");
   if (!year || !month || !day) return value;
   return `${day}/${month}/${year}`;
@@ -1282,6 +1289,9 @@ function toDate(value) {
 function clean(value) {
   return String(value ?? "").trim().replace(/\s+/g, " ");
 }
+
+
+
 
 
 

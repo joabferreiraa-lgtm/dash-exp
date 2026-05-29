@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Produtividade de Embalagem</title>
     <script src="/asset-guard.js?v=1"></script>
-    <link rel="stylesheet" href="/styles.css?v=11" />
+    <link rel="stylesheet" href="/styles.css?v=12" />
   </head>
   <body>
     <div class="collab-app">
@@ -362,94 +362,27 @@
       </section>
     </div>
     <div class="modal-backdrop" id="pointsNoticeModal" aria-hidden="true">
-      <section class="rules-modal notice-modal" role="dialog" aria-modal="true" aria-labelledby="pointsNoticeTitle">
-        <div class="rules-head">
-          <div>
-            <span class="eyebrow">Aviso importante</span>
-            <h2 id="pointsNoticeTitle">Nova Regra de Premiação por Produtividade</h2>
-          </div>
-          <button class="icon-button" id="pointsNoticeCloseButton" type="button" aria-label="Fechar aviso">x</button>
-        </div>
-
-        <div class="notice-section">
-          <p>
-            Com o objetivo de tornar a premiação mais justa para todos os colaboradores, a partir deste período
-            a produtividade passará a ser calculada através de um sistema de pontuação.
-          </p>
-          <p>
-            Anteriormente, a premiação era baseada na quantidade de itens embalados. Porém, alguns produtos exigiam
-            muito menos tempo e esforço operacional do que outros, gerando diferenças na produtividade mesmo quando
-            a quantidade de itens era semelhante.
-          </p>
-          <p>
-            Com o novo sistema, cada produto recebe uma pontuação de acordo com sua complexidade operacional,
-            considerando fatores como manuseio, conferência, separação e tempo de embalagem.
-          </p>
-          <p>
-            Dessa forma, atividades mais trabalhosas passam a ser valorizadas de maneira mais equilibrada,
-            garantindo maior igualdade entre todos os colaboradores.
-          </p>
-        </div>
-
-        <div class="notice-section">
-          <h3>Nova Tabela de Premiação</h3>
-          <div class="table-wrap notice-table-wrap">
-            <table class="notice-table rules-prize-table">
-              <thead>
-                <tr>
-                  <th>Faixa</th>
-                  <th>Pontos Acumulados</th>
-                  <th>Valor por Ponto</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Faixa 1</strong></td>
-                  <td>Até 7.000 pontos</td>
-                  <td><strong>R$ 0,02</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Faixa 2</strong></td>
-                  <td>De 7.001 a 10.000 pontos</td>
-                  <td><strong>R$ 0,03</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Faixa 3</strong></td>
-                  <td>Acima de 10.000 pontos</td>
-                  <td><strong>R$ 0,04</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="example-panel notice-example">
-          <div>
-            <span class="eyebrow">Cálculo progressivo</span>
-            <h3>Exemplo para 12.000 pontos</h3>
-          </div>
-          <p>A premiação é progressiva: cada valor é aplicado apenas aos pontos daquela faixa.</p>
-          <div class="calc-lines">
-            <p><span>7.000 x R$ 0,02</span><strong>R$ 140,00</strong></p>
-            <p><span>3.000 x R$ 0,03</span><strong>R$ 90,00</strong></p>
-            <p><span>2.000 x R$ 0,04</span><strong>R$ 80,00</strong></p>
-          </div>
-          <div class="calc-total">
-            <span>Premiação total</span>
-            <strong>R$ 310,00</strong>
-          </div>
-        </div>
-
-        <p class="notice-footnote">
-          A empresa poderá revisar periodicamente as pontuações dos produtos para manter o equilíbrio e a justiça do sistema de premiação.
+      <section class="rules-modal compact-notice-modal" role="dialog" aria-modal="true" aria-labelledby="pointsNoticeTitle">
+        <div class="compact-notice-icon">!</div>
+        <span class="eyebrow">Aviso importante</span>
+        <h2 id="pointsNoticeTitle">Novas regras de premiação</h2>
+        <p>
+          A premiação agora será calculada por pontos de produtividade, considerando a dificuldade e o esforço operacional de cada produto.
         </p>
-
-        <button class="action-button rules-button" id="pointsNoticeOkButton" type="button">Entendi</button>
+        <div class="compact-notice-actions">
+          <button class="action-button rules-button" id="pointsNoticeRulesButton" type="button">Ver regras</button>
+          <button class="action-button secondary-button" id="pointsNoticeOkButton" type="button">Fechar</button>
+        </div>
       </section>
     </div>
-    <script src="/app.js?v=25" type="module"></script>
+    <script src="/app.js?v=28" type="module"></script>
   </body>
 </html>
+
+
+
+
+
 
 
 

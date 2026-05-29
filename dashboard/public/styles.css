@@ -993,3 +993,58 @@ th {
 .dashboard-content[hidden] {
   display: none !important;
 }
+
+.compact-notice-modal {
+  width: min(520px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 34px;
+}
+
+.compact-notice-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #facc15;
+  color: #111827;
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.compact-notice-modal h2 {
+  font-size: 25px;
+}
+
+.compact-notice-modal p {
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 430px;
+}
+
+.compact-notice-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.compact-notice-actions .action-button {
+  flex: 1;
+  min-height: 42px;
+}
+
+.secondary-button {
+  background: #f1f5f9;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+@media (max-width: 560px) {
+  .compact-notice-actions {
+    flex-direction: column;
+  }
+}
