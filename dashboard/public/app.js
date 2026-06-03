@@ -1,4 +1,4 @@
-﻿const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const spreadsheetId = "1bS2iqiMXsXxBXpTkHYW2q2d0pM7smxfhD6e3gWtYRUo";
 const isCollaboratorPage = Boolean(document.querySelector(".collab-app"));
 const hiddenCollaboratorMonths = new Set([1, 2]);
@@ -17,12 +17,8 @@ const state = {
     packedProductsPeriod: "today",
     packedProductsStartDate: "",
     packedProductsEndDate: "",
-    payoutYear: "",
-    payoutMonth: "",
-    payoutPerson: "all",
   },
   selectedMonth: null,
-  maintenance: { enabled: false, message: "" },
 };
 
 let chartHitBoxes = [];
@@ -36,8 +32,6 @@ const els = {
   refresh: document.querySelector("#refreshButton"),
   updatedAt: document.querySelector("#updatedAt"),
   status: document.querySelector("#statusPill"),
-  adminViewButtons: document.querySelectorAll("[data-admin-view]"),
-  adminViews: document.querySelectorAll(".admin-view"),
   kpiTotal: document.querySelector("#kpiTotal"),
   kpiFull: document.querySelector("#kpiFull"),
   kpiTiny: document.querySelector("#kpiTiny"),
@@ -68,14 +62,6 @@ const els = {
   packedProductsClearFilters: document.querySelector("#packedProductsClearFilters"),
   packedProductsSubtitle: document.querySelector("#packedProductsSubtitle"),
   packedProductsTable: document.querySelector("#packedProductsTable"),
-  payoutYear: document.querySelector("#payoutYearFilter"),
-  payoutMonth: document.querySelector("#payoutMonthFilter"),
-  payoutPerson: document.querySelector("#payoutPersonFilter"),
-  payoutSubtitle: document.querySelector("#payoutSubtitle"),
-  payoutTotalAmount: document.querySelector("#payoutTotalAmount"),
-  payoutTotalPoints: document.querySelector("#payoutTotalPoints"),
-  payoutPeople: document.querySelector("#payoutPeople"),
-  payoutTable: document.querySelector("#payoutTable"),
   monthDetailPanel: document.querySelector("#monthDetailPanel"),
   monthDetailTitle: document.querySelector("#monthDetailTitle"),
   monthDetailSubtitle: document.querySelector("#monthDetailSubtitle"),
@@ -83,26 +69,11 @@ const els = {
   rulesButton: document.querySelector("#rulesButton"),
   rulesCloseButton: document.querySelector("#rulesCloseButton"),
   rulesModal: document.querySelector("#rulesModal"),
-  pointsNoticeModal: document.querySelector("#pointsNoticeModal"),
-  pointsNoticeCloseButton: document.querySelector("#pointsNoticeCloseButton"),
-  pointsNoticeOkButton: document.querySelector("#pointsNoticeOkButton"),
-  pointsNoticeRulesButton: document.querySelector("#pointsNoticeRulesButton"),
-  maintenanceScreen: document.querySelector("#maintenanceScreen"),
-  maintenanceMessageText: document.querySelector("#maintenanceMessageText"),
-  maintenanceToggle: document.querySelector("#maintenanceToggle"),
-  maintenanceMessage: document.querySelector("#maintenanceMessage"),
-  maintenanceSaveButton: document.querySelector("#maintenanceSaveButton"),
-  maintenanceStatus: document.querySelector("#maintenanceStatus"),
-  maintenanceFeedback: document.querySelector("#maintenanceFeedback"),
 };
 
-initMaintenanceControls();
 loadData();
 
 els.refresh?.addEventListener("click", () => loadData(true));
-els.adminViewButtons?.forEach(button => {
-  button.addEventListener("click", () => setAdminView(button.dataset.adminView));
-});
 els.chart?.addEventListener("click", event => {
   if (isCollaboratorPage) return;
   const month = monthFromChartEvent(event);
@@ -122,21 +93,9 @@ els.rulesCloseButton?.addEventListener("click", closeRulesModal);
 els.rulesModal?.addEventListener("click", event => {
   if (event.target === els.rulesModal) closeRulesModal();
 });
-els.pointsNoticeCloseButton?.addEventListener("click", closePointsNoticeModal);
-els.pointsNoticeOkButton?.addEventListener("click", closePointsNoticeModal);
-els.pointsNoticeRulesButton?.addEventListener("click", event => {
-  event.preventDefault();
-  event.stopPropagation();
-  closePointsNoticeModal();
-  window.setTimeout(openRulesModal, 80);
-});
-els.pointsNoticeModal?.addEventListener("click", event => {
-  if (event.target === els.pointsNoticeModal) closePointsNoticeModal();
-});
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     closeRulesModal();
-    closePointsNoticeModal();
   }
 });
 [els.year, els.month, els.account, els.source, els.person].filter(Boolean).forEach(select => {
@@ -145,13 +104,6 @@ document.addEventListener("keydown", event => {
     render();
   });
 });
-
-if (isCollaboratorPage) {
-  window.setTimeout(async () => {
-    await loadMaintenanceState();
-    openPointsNoticeModal();
-  }, 500);
-}
 
 els.fullShipmentSearch?.addEventListener("input", () => {
   state.filters.fullShipmentSearch = clean(els.fullShipmentSearch.value).toLowerCase();
@@ -178,7 +130,6 @@ els.fullClearFilters?.addEventListener("click", () => {
 els.packedProductsPeriod?.addEventListener("change", () => {
   state.filters.packedProductsPeriod = els.packedProductsPeriod.value;
   renderPackedProductsSummary();
-  renderPayoutSummary();
 });
 
 [els.packedProductsStartDate, els.packedProductsEndDate].filter(Boolean).forEach(input => {
@@ -190,13 +141,6 @@ els.packedProductsPeriod?.addEventListener("change", () => {
   });
 });
 
-[els.payoutYear, els.payoutMonth, els.payoutPerson].filter(Boolean).forEach(select => {
-  select.addEventListener("change", () => {
-    state.filters[select.dataset.filter] = select.value;
-    renderPayoutSummary();
-  });
-});
-
 els.packedProductsClearFilters?.addEventListener("click", () => {
   state.filters.packedProductsPeriod = "today";
   state.filters.packedProductsStartDate = "";
@@ -205,77 +149,9 @@ els.packedProductsClearFilters?.addEventListener("click", () => {
   els.packedProductsStartDate.value = "";
   els.packedProductsEndDate.value = "";
   renderPackedProductsSummary();
-  renderPayoutSummary();
 });
 
-async function loadMaintenanceState() {
-  try {
-    const response = await fetch("/api/maintenance");
-    const data = await response.json();
-    state.maintenance = {
-      enabled: Boolean(data.enabled),
-      message: data.message || "Dashboard em manutenção. Os lançamentos Full continuam disponíveis."
-    };
-  } catch {
-    state.maintenance = { enabled: false, message: "" };
-  }
-
-  updateMaintenanceControls();
-}
-
-function initMaintenanceControls() {
-  els.maintenanceSaveButton?.addEventListener("click", saveMaintenanceState);
-}
-
-function updateMaintenanceControls() {
-  if (els.maintenanceToggle) els.maintenanceToggle.checked = state.maintenance.enabled;
-  if (els.maintenanceMessage) els.maintenanceMessage.value = state.maintenance.message;
-  if (els.maintenanceStatus) els.maintenanceStatus.textContent = state.maintenance.enabled ? "Ativo" : "Desativado";
-}
-
-async function saveMaintenanceState() {
-  const enabled = Boolean(els.maintenanceToggle?.checked);
-  const message = els.maintenanceMessage?.value || "Dashboard em manutenção. Os lançamentos Full continuam disponíveis.";
-  if (els.maintenanceFeedback) els.maintenanceFeedback.textContent = "Salvando...";
-
-  try {
-    const response = await fetch("/api/maintenance", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ enabled, message })
-    });
-    const data = await response.json();
-    if (!response.ok || data.error) throw new Error(data.error || "Não foi possível salvar.");
-    state.maintenance = { enabled: Boolean(data.enabled), message: data.message || message };
-    updateMaintenanceControls();
-    if (els.maintenanceFeedback) els.maintenanceFeedback.textContent = enabled ? "Manutenção ativada." : "Manutenção desativada.";
-  } catch (error) {
-    if (els.maintenanceFeedback) els.maintenanceFeedback.textContent = error.message || "Erro ao salvar manutenção.";
-  }
-}
-
-function showMaintenanceScreen() {
-  document.querySelectorAll(".dashboard-content").forEach(section => { section.hidden = true; });
-  if (els.maintenanceScreen) els.maintenanceScreen.hidden = false;
-  if (els.maintenanceMessageText) els.maintenanceMessageText.textContent = state.maintenance.message;
-  if (els.status) els.status.textContent = "Manutenção";
-  if (els.rulesButton) els.rulesButton.hidden = true;
-  closePointsNoticeModal();
-  closeRulesModal();
-}
-
-function showDashboardContent() {
-  document.querySelectorAll(".dashboard-content").forEach(section => { section.hidden = false; });
-  if (els.maintenanceScreen) els.maintenanceScreen.hidden = true;
-  if (els.rulesButton) els.rulesButton.hidden = false;
-}
 async function loadData(force = false) {
-  await loadMaintenanceState();
-  if (isCollaboratorPage && state.maintenance.enabled) {
-    showMaintenanceScreen();
-    return;
-  }
-  showDashboardContent();
   if (els.status) els.status.textContent = "Atualizando";
   let data;
   try {
@@ -292,23 +168,6 @@ async function loadData(force = false) {
   if (els.packedProductsTable) loadPackedProductsData(force);
 }
 
-function setAdminView(viewId) {
-  if (!viewId) return;
-  els.adminViews?.forEach(view => {
-    view.classList.toggle("active", view.id === viewId);
-  });
-  els.adminViewButtons?.forEach(button => {
-    button.classList.toggle("active", button.dataset.adminView === viewId);
-  });
-
-  if (viewId === "payoutView") {
-    renderPayoutSummary();
-  }
-
-  if (viewId === "productsView") {
-    loadPackedProductsData(false);
-  }
-}
 async function loadPackedProductsData(force = false) {
   try {
     const response = await fetch(`/api/packed-products${force ? "?refresh=1" : ""}`);
@@ -320,7 +179,6 @@ async function loadPackedProductsData(force = false) {
   }
 
   renderPackedProductsSummary();
-  renderPayoutSummary();
 }
 
 async function loadDirectFromSheets() {
@@ -354,7 +212,6 @@ async function loadPackedProductsDirectFromSheets() {
 }
 
 function openRulesModal() {
-  if (isCollaboratorPage && state.maintenance.enabled) return;
   if (!els.rulesModal) return;
   els.rulesModal.classList.add("open");
   els.rulesModal.setAttribute("aria-hidden", "false");
@@ -365,20 +222,6 @@ function closeRulesModal() {
   if (!els.rulesModal) return;
   els.rulesModal.classList.remove("open");
   els.rulesModal.setAttribute("aria-hidden", "true");
-}
-
-function openPointsNoticeModal() {
-  if (isCollaboratorPage && state.maintenance.enabled) return;
-  if (!els.pointsNoticeModal) return;
-  els.pointsNoticeModal.classList.add("open");
-  els.pointsNoticeModal.setAttribute("aria-hidden", "false");
-  els.pointsNoticeOkButton?.focus();
-}
-
-function closePointsNoticeModal() {
-  if (!els.pointsNoticeModal) return;
-  els.pointsNoticeModal.classList.remove("open");
-  els.pointsNoticeModal.setAttribute("aria-hidden", "true");
 }
 
 async function fetchSheetCsv(sheetName) {
@@ -483,7 +326,6 @@ function setupFilters() {
   fillSelect(els.account, "account", [["all", "Todas"], ...accounts.map(account => [account, account])]);
   fillSelect(els.source, "source", [["all", "Full + Tiny"], ["Full", "Apenas Full"], ["Tiny", "Apenas Tiny"]]);
   fillSelect(els.person, "person", [["all", "Todos"], ...people.map(person => [person, person])]);
-  setupPayoutFilters(years);
   if (els.fullStartDate) els.fullStartDate.dataset.filter = "fullStartDate";
   if (els.fullEndDate) els.fullEndDate.dataset.filter = "fullEndDate";
   if (els.packedProductsStartDate) els.packedProductsStartDate.dataset.filter = "packedProductsStartDate";
@@ -497,22 +339,6 @@ function setupFilters() {
   }
 }
 
-function setupPayoutFilters(years) {
-  if (!els.payoutYear || !els.payoutMonth || !els.payoutPerson) return;
-
-  const now = new Date();
-  const yearOptions = years.length ? years : [now.getFullYear()];
-  if (!state.filters.payoutYear) {
-    state.filters.payoutYear = String(yearOptions.includes(now.getFullYear()) ? now.getFullYear() : yearOptions[0]);
-  }
-  if (!state.filters.payoutMonth) {
-    state.filters.payoutMonth = String(now.getMonth() + 1);
-  }
-
-  fillSelect(els.payoutYear, "payoutYear", yearOptions.map(year => [String(year), String(year)]));
-  fillSelect(els.payoutMonth, "payoutMonth", monthNames.map((name, idx) => [String(idx + 1), name]));
-  fillSelect(els.payoutPerson, "payoutPerson", [["all", "Todos"], ...state.data.people.map(person => [person, person])]);
-}
 function fillSelect(select, filter, options) {
   if (!select) return;
   select.dataset.filter = filter;
@@ -560,7 +386,6 @@ function render() {
   renderMonthDetail();
   renderFullShipmentSummary();
   renderPackedProductsSummary();
-  renderPayoutSummary();
 }
 
 function filteredRecords() {
@@ -812,11 +637,11 @@ function renderPackedProductsSummary() {
   els.packedProductsTable.innerHTML = rows.length
     ? rows.map(row => `
       <tr>
-        <td><span class="account-pill">${escapeHtml(row.account)}</span></td>
-        <td class="sku-cell"><strong>${escapeHtml(row.sku)}</strong></td>
-        <td class="product-name-cell">${escapeHtml(row.description || "-")}</td>
-        <td class="numeric-cell"><strong>${fmt(row.qty)}</strong></td>
-        <td class="numeric-cell">${fmt(row.separations)}</td>
+        <td>${escapeHtml(row.account)}</td>
+        <td><strong>${escapeHtml(row.sku)}</strong></td>
+        <td>${escapeHtml(row.description || "-")}</td>
+        <td><strong>${fmt(row.qty)}</strong></td>
+        <td>${fmt(row.separations)}</td>
       </tr>
     `).join("")
     : `<tr><td colspan="5">Sem produtos embalados para os filtros selecionados.</td></tr>`;
@@ -903,67 +728,6 @@ function byPackedProduct(records) {
     .sort((a, b) => b.qty - a.qty || a.account.localeCompare(b.account, "pt-BR") || a.sku.localeCompare(b.sku, "pt-BR", { numeric: true }));
 }
 
-function renderPayoutSummary() {
-  if (!els.payoutTable || !state.data) return;
-
-  const year = Number(state.filters.payoutYear || new Date().getFullYear());
-  const month = Number(state.filters.payoutMonth || new Date().getMonth() + 1);
-  const records = state.data.records.filter(record => {
-    if (record.year !== year || record.month !== month) return false;
-    if (state.filters.account !== "all" && record.account !== state.filters.account) return false;
-    if (state.filters.source !== "all" && record.source !== state.filters.source) return false;
-    if (state.filters.person !== "all" && record.name !== state.filters.person) return false;
-    if (state.filters.payoutPerson !== "all" && record.name !== state.filters.payoutPerson) return false;
-    return true;
-  });
-
-  const rows = byPerson(records).map(row => ({ ...row, payout: calculatePayout(row.total) }));
-  const totalPoints = rows.reduce((acc, row) => acc + row.total, 0);
-  const totalAmount = rows.reduce((acc, row) => acc + row.payout.total, 0);
-
-  els.payoutSubtitle.textContent = `${monthNames[month - 1]} ${year}`;
-  els.payoutTotalAmount.textContent = formatCurrency(totalAmount);
-  els.payoutTotalPoints.textContent = fmtPoints(totalPoints);
-  els.payoutPeople.textContent = fmt(rows.length);
-  els.payoutTable.innerHTML = rows.length
-    ? rows.map(row => `
-      <tr>
-        <td>${escapeHtml(row.name)}</td>
-        <td><strong>${fmtPoints(row.total)}</strong></td>
-        <td>${formatCurrency(row.payout.tier1)}</td>
-        <td>${formatCurrency(row.payout.tier2)}</td>
-        <td>${formatCurrency(row.payout.tier3)}</td>
-        <td><strong>${formatCurrency(row.payout.total)}</strong></td>
-      </tr>
-    `).join("")
-    : `<tr><td colspan="6">Sem pontos para o mês selecionado.</td></tr>`;
-}
-
-function calculatePayout(points) {
-  const tier1Points = Math.min(points, 8000);
-  const tier2Points = Math.min(Math.max(points - 8000, 0), 4000);
-  const tier3Points = Math.max(points - 12000, 0);
-  const tier1 = tier1Points * 0.02;
-  const tier2 = tier2Points * 0.03;
-  const tier3 = tier3Points * 0.04;
-  return { tier1, tier2, tier3, total: tier1 + tier2 + tier3 };
-}
-
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-function fmtPoints(value) {
-  return Number(value || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: Number.isInteger(Number(value || 0)) ? 0 : 2,
-    maximumFractionDigits: 2,
-  });
-}
 function renderPreviousMonthTable(rows) {
   if (!els.previousMonthTable) return;
 
@@ -1298,15 +1062,3 @@ function toDate(value) {
 function clean(value) {
   return String(value ?? "").trim().replace(/\s+/g, " ");
 }
-
-
-
-
-
-
-
-
-
-
-
-

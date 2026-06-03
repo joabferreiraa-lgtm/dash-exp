@@ -1,11 +1,11 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Produtividade de Embalagem</title>
     <script src="/asset-guard.js?v=1"></script>
-    <link rel="stylesheet" href="/styles.css?v=12" />
+    <link rel="stylesheet" href="/styles.css?v=7" />
   </head>
   <body>
     <div class="collab-app">
@@ -16,27 +16,14 @@
             <p>Pontos por colaborador, periodo e origem.</p>
           </div>
           <div class="top-actions">
-            <button class="action-button rules-button" id="rulesButton" type="button" hidden>Regras</button>
+            <button class="action-button rules-button" id="rulesButton" type="button">Regras</button>
             <a class="action-link" href="/full.html">Lancamento Full</a>
             <div class="status-pill" id="statusPill">Carregando</div>
           </div>
           <p id="updatedAt" hidden></p>
         </section>
 
-
-        <section class="maintenance-screen" id="maintenanceScreen" hidden>
-          <div class="maintenance-card">
-            <div class="brand-mark maintenance-logo">
-              <img src="/logo.png" alt="Logo" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
-              <span>OP</span>
-            </div>
-            <span class="eyebrow">Dashboard em manutenção</span>
-            <h2>Estamos atualizando a tela de produtividade</h2>
-            <p id="maintenanceMessageText">Os lançamentos Full continuam funcionando normalmente.</p>
-            <a class="action-link maintenance-full-link" href="/full.html">Ir para Lançamento Full</a>
-          </div>
-        </section>
-        <section class="kpis dashboard-content">
+        <section class="kpis">
           <article>
             <span>Total de Pontos</span>
             <strong id="kpiTotal">0</strong>
@@ -55,7 +42,7 @@
           </article>
         </section>
 
-        <section class="grid dashboard-content">
+        <section class="grid">
           <div class="panel chart-panel">
             <div class="panel-head">
               <h2>Evolucao mensal de pontos</h2>
@@ -97,7 +84,7 @@
           </div>
         </section>
 
-        <section class="panel table-panel month-detail-panel dashboard-content" id="monthDetailPanel" hidden>
+        <section class="panel table-panel month-detail-panel" id="monthDetailPanel" hidden>
           <div class="panel-head">
             <h2 id="monthDetailTitle">Detalhe do mes</h2>
             <span id="monthDetailSubtitle"></span>
@@ -166,228 +153,57 @@
     </div>
 
     <div class="modal-backdrop" id="rulesModal" aria-hidden="true">
-      <section class="rules-modal notice-modal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+      <section class="rules-modal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
         <div class="rules-head">
           <div>
-            <span class="eyebrow">Política de premiação</span>
-            <h2 id="rulesTitle">Regras de Premiação por Produtividade</h2>
+            <span class="eyebrow">Politica de premiacao</span>
+            <h2 id="rulesTitle">Regra por pontos</h2>
           </div>
           <button class="icon-button" id="rulesCloseButton" type="button" aria-label="Fechar regras">x</button>
         </div>
 
-        <div class="notice-section">
-          <h3>Sistema de Pontuação</h3>
-          <p>A produtividade é calculada através de pontos atribuídos aos produtos embalados.</p>
-          <p>
-            Cada produto possui uma pontuação definida pela empresa, considerando fatores como complexidade,
-            manuseio, conferência, separação e tempo de embalagem.
-          </p>
-          <p>
-            O objetivo do sistema é garantir que a premiação reflita de forma mais justa o esforço operacional
-            realizado por cada colaborador.
-          </p>
-          <p>O total de pontos do colaborador é obtido pela soma de todos os pontos gerados durante o período de apuração.</p>
-        </div>
-
-        <div class="notice-section">
-          <h3>Faixas de Premiação</h3>
-          <p>A premiação é calculada de forma progressiva conforme a quantidade de pontos acumulados no mês.</p>
-          <div class="table-wrap notice-table-wrap">
-            <table class="notice-table rules-prize-table">
-              <thead>
-                <tr>
-                  <th>Faixa</th>
-                  <th>Pontos Acumulados</th>
-                  <th>Valor por Ponto</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Faixa 1</strong></td>
-                  <td>Até 8.000 pontos</td>
-                  <td><strong>R$ 0,02</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Faixa 2</strong></td>
-                  <td>De 8.001 a 12.000 pontos</td>
-                  <td><strong>R$ 0,03</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Faixa 3</strong></td>
-                  <td>Acima de 12.000 pontos</td>
-                  <td><strong>R$ 0,04</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="notice-section">
-          <h3>Como Funciona o Cálculo Progressivo</h3>
-          <p>O valor de cada faixa é aplicado apenas aos pontos pertencentes à respectiva faixa.</p>
-        </div>
-
-        <div class="rules-examples-grid">
-          <article class="example-panel notice-example compact-example">
-            <div>
-              <span class="eyebrow">Exemplo 1</span>
-              <h3>4.000 pontos</h3>
-            </div>
-            <div class="calc-lines">
-              <p><span>4.000 x R$ 0,02</span><strong>R$ 80,00</strong></p>
-            </div>
-            <div class="calc-total">
-              <span>Premiação Total</span>
-              <strong>R$ 80,00</strong>
-            </div>
-          </article>
-
-          <article class="example-panel notice-example compact-example">
-            <div>
-              <span class="eyebrow">Exemplo 2</span>
-              <h3>8.000 pontos</h3>
-            </div>
-            <div class="calc-lines">
-              <p><span>8.000 x R$ 0,02</span><strong>R$ 160,00</strong></p>
-            </div>
-            <div class="calc-total">
-              <span>Premiação Total</span>
-              <strong>R$ 160,00</strong>
-            </div>
-          </article>
-
-          <article class="example-panel notice-example compact-example">
-            <div>
-              <span class="eyebrow">Exemplo 3</span>
-              <h3>10.000 pontos</h3>
-            </div>
-            <div class="calc-lines">
-              <p><span>8.000 x R$ 0,02</span><strong>R$ 160,00</strong></p>
-              <p><span>2.000 x R$ 0,03</span><strong>R$ 60,00</strong></p>
-            </div>
-            <div class="calc-total">
-              <span>Premiação Total</span>
-              <strong>R$ 220,00</strong>
-            </div>
-          </article>
-
-          <article class="example-panel notice-example compact-example">
-            <div>
-              <span class="eyebrow">Exemplo 4</span>
-              <h3>12.000 pontos</h3>
-            </div>
-            <div class="calc-lines">
-              <p><span>8.000 x R$ 0,02</span><strong>R$ 160,00</strong></p>
-              <p><span>4.000 x R$ 0,03</span><strong>R$ 120,00</strong></p>
-            </div>
-            <div class="calc-total">
-              <span>Premiação Total</span>
-              <strong>R$ 280,00</strong>
-            </div>
-          </article>
-
-          <article class="example-panel notice-example compact-example">
-            <div>
-              <span class="eyebrow">Exemplo 5</span>
-              <h3>15.000 pontos</h3>
-            </div>
-            <div class="calc-lines">
-              <p><span>8.000 x R$ 0,02</span><strong>R$ 160,00</strong></p>
-              <p><span>4.000 x R$ 0,03</span><strong>R$ 120,00</strong></p>
-              <p><span>3.000 x R$ 0,04</span><strong>R$ 120,00</strong></p>
-            </div>
-            <div class="calc-total">
-              <span>Premiação Total</span>
-              <strong>R$ 400,00</strong>
-            </div>
-          </article>
-        </div>
-
-        <div class="notice-section">
-          <h3>Exemplos de Pontuação</h3>
-          <p>A pontuação dos produtos pode variar de acordo com a complexidade da atividade.</p>
-          <div class="table-wrap notice-table-wrap">
-            <table class="notice-table">
-              <thead>
-                <tr>
-                  <th>Tipo de Atividade</th>
-                  <th>Exemplo de Pontuação</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Produto muito simples</td>
-                  <td><strong>0,01 ponto</strong></td>
-                </tr>
-                <tr>
-                  <td>Produto simples</td>
-                  <td><strong>0,10 ponto</strong></td>
-                </tr>
-                <tr>
-                  <td>Produto intermediário</td>
-                  <td><strong>0,50 ponto</strong></td>
-                </tr>
-                <tr>
-                  <td>Produto padrão</td>
-                  <td><strong>1,00 ponto</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="notice-footnote">Os valores acima são apenas exemplos ilustrativos. A pontuação oficial de cada produto é definida pela empresa.</p>
-        </div>
-
-        <div class="notice-benefits">
-          <h3>Critérios da Pontuação</h3>
-          <ul>
-            <li>A pontuação dos produtos é definida pela empresa.</li>
-            <li>Produtos diferentes podem possuir pontuações diferentes.</li>
-            <li>A pontuação considera o esforço operacional necessário para execução da atividade.</li>
-            <li>A classificação dos produtos busca garantir equilíbrio e justiça entre atividades de diferentes níveis de dificuldade.</li>
-            <li>A empresa poderá revisar e atualizar as pontuações sempre que necessário para manter a coerência e a equidade do sistema.</li>
-          </ul>
-        </div>
-
-        <div class="notice-benefits neutral-benefits">
-          <h3>Observações Gerais</h3>
-          <ul>
-            <li>O total de pontos é atualizado automaticamente conforme os pedidos são processados.</li>
-            <li>A premiação é individual e calculada sobre a produtividade de cada colaborador.</li>
-            <li>Os valores apresentados referem-se exclusivamente à premiação por produtividade.</li>
-            <li>O cálculo da premiação é realizado automaticamente pelo sistema com base na pontuação acumulada durante o período de apuração.</li>
-          </ul>
-        </div>
-      </section>
-    </div>
-    <div class="modal-backdrop" id="pointsNoticeModal" aria-hidden="true">
-      <section class="rules-modal compact-notice-modal" role="dialog" aria-modal="true" aria-labelledby="pointsNoticeTitle">
-        <div class="compact-notice-icon">!</div>
-        <span class="eyebrow">Aviso importante</span>
-        <h2 id="pointsNoticeTitle">Novas regras de premiação</h2>
-        <p>
-          A premiação agora será calculada por pontos de produtividade, considerando a dificuldade e o esforço operacional de cada produto.
+        <p class="rules-intro">
+          A premiacao e calculada por pontos, de forma progressiva por faixa.
+          Cada item embalado pode valer de 0,1 a 1 ponto, conforme a dificuldade de embalagem cadastrada na aba SKU.
+          Cada valor abaixo vale apenas para os pontos dentro da propria faixa.
         </p>
-        <div class="compact-notice-actions">
-          <button class="action-button rules-button" id="pointsNoticeRulesButton" type="button">Ver regras</button>
-          <button class="action-button secondary-button" id="pointsNoticeOkButton" type="button">Fechar</button>
+
+        <div class="rules-grid">
+          <article class="rule-card">
+            <span>Faixa 1</span>
+            <strong>Ate 7.000 pontos</strong>
+            <b>R$ 0,01 por ponto</b>
+          </article>
+          <article class="rule-card">
+            <span>Faixa 2</span>
+            <strong>7.001 a 12.000 pontos</strong>
+            <b>R$ 0,02 por ponto</b>
+          </article>
+          <article class="rule-card">
+            <span>Faixa 3</span>
+            <strong>Acima de 12.000 pontos</strong>
+            <b>R$ 0,03 por ponto</b>
+          </article>
+        </div>
+
+        <div class="example-panel">
+          <div>
+            <span class="eyebrow">Exemplo</span>
+            <h3>Colaborador com 14.000 pontos</h3>
+          </div>
+          <div class="calc-lines">
+            <p><span>7.000 x R$ 0,01</span><strong>R$ 70,00</strong></p>
+            <p><span>5.000 x R$ 0,02</span><strong>R$ 100,00</strong></p>
+            <p><span>2.000 x R$ 0,03</span><strong>R$ 60,00</strong></p>
+          </div>
+          <div class="calc-total">
+            <span>Total da premiacao</span>
+            <strong>R$ 230,00</strong>
+          </div>
         </div>
       </section>
     </div>
-    <script src="/app.js?v=31" type="module"></script>
+
+    <script src="/app.js?v=21" type="module"></script>
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
