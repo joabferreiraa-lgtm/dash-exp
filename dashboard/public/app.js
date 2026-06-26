@@ -146,13 +146,6 @@ document.addEventListener("keydown", event => {
   });
 });
 
-if (isCollaboratorPage) {
-  window.setTimeout(async () => {
-    await loadMaintenanceState();
-    openPointsNoticeModal();
-  }, 500);
-}
-
 els.fullShipmentSearch?.addEventListener("input", () => {
   state.filters.fullShipmentSearch = clean(els.fullShipmentSearch.value).toLowerCase();
   renderFullShipmentSummary();
