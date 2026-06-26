@@ -1459,7 +1459,7 @@ function toDate(value) {
 
   const br = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
   if (br) {
-    return new Date(
+    return dateFromSaoPauloParts(
       Number(br[3]),
       Number(br[2]) - 1,
       Number(br[1]),
@@ -1469,15 +1469,39 @@ function toDate(value) {
     );
   }
 
+  const isoLocal = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (isoLocal) {
+    return dateFromSaoPauloParts(
+      Number(isoLocal[1]),
+      Number(isoLocal[2]) - 1,
+      Number(isoLocal[3]),
+      Number(isoLocal[4] || 0),
+      Number(isoLocal[5] || 0),
+      Number(isoLocal[6] || 0),
+    );
+  }
+
   if (/^\d+(\.\d+)?$/.test(text)) {
     const serial = Number(text);
     if (serial > 20_000) {
-      return new Date(Math.round((serial - 25569) * 86400 * 1000));
+      const utcDate = new Date(Math.round((serial - 25569) * 86400 * 1000));
+      return dateFromSaoPauloParts(
+        utcDate.getUTCFullYear(),
+        utcDate.getUTCMonth(),
+        utcDate.getUTCDate(),
+        utcDate.getUTCHours(),
+        utcDate.getUTCMinutes(),
+        utcDate.getUTCSeconds(),
+      );
     }
   }
 
   const parsed = new Date(text);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function dateFromSaoPauloParts(year, monthIndex, day, hour = 0, minute = 0, second = 0) {
+  return new Date(Date.UTC(year, monthIndex, day, hour + 3, minute, second));
 }
 
 function clean(value) {
