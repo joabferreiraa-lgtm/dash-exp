@@ -47,6 +47,9 @@ const els = {
   kpiTotal: document.querySelector("#kpiTotal"),
   kpiFull: document.querySelector("#kpiFull"),
   kpiTiny: document.querySelector("#kpiTiny"),
+  kpiTotalUnits: document.querySelector("#kpiTotalUnits"),
+  kpiFullUnits: document.querySelector("#kpiFullUnits"),
+  kpiTinyUnits: document.querySelector("#kpiTinyUnits"),
   kpiPeople: document.querySelector("#kpiPeople"),
   chart: document.querySelector("#monthlyChart"),
   chartSubtitle: document.querySelector("#chartSubtitle"),
@@ -80,6 +83,7 @@ const els = {
   payoutSubtitle: document.querySelector("#payoutSubtitle"),
   payoutTotalAmount: document.querySelector("#payoutTotalAmount"),
   payoutTotalPoints: document.querySelector("#payoutTotalPoints"),
+  payoutTotalUnits: document.querySelector("#payoutTotalUnits"),
   payoutPeople: document.querySelector("#payoutPeople"),
   payoutTable: document.querySelector("#payoutTable"),
   monthDetailPanel: document.querySelector("#monthDetailPanel"),
@@ -407,6 +411,7 @@ function recordsFromFull(rows) {
   return rows.slice(1).map(row => {
     const name = clean(row[0]);
     const qty = fullItemsQty(row);
+    const unitQty = toNumber(row[1]);
     const date = toDate(row[8]);
     if (!name || !qty || !date) return null;
     return {
@@ -414,6 +419,7 @@ function recordsFromFull(rows) {
       account: "FULL",
       name,
       qty,
+      unitQty,
       productQty: toNumber(row[1]),
       sku: clean(row[2]),
       loja: clean(row[3]),
@@ -436,10 +442,11 @@ function recordsFromTinyRaw(rows, usuarios) {
     const id = clean(row[4]);
     const name = clean(usuarios[id] || row[5]);
     const qty = toNumber(row[13]) || toNumber(row[10]);
+    const unitQty = 1;
     const account = clean(row[12] || "CONTA1");
     const date = toDate(row[3] || row[1] || row[2]);
     if (!name || !qty || !date) return null;
-    return { source: "Tiny", account, name, qty, year: date.getFullYear(), month: date.getMonth() + 1, date: date.toISOString() };
+    return { source: "Tiny", account, name, qty, unitQty, year: date.getFullYear(), month: date.getMonth() + 1, date: date.toISOString() };
   }).filter(Boolean);
 }
 
@@ -573,6 +580,9 @@ function render() {
   els.kpiTotal.textContent = fmt(totals.total);
   els.kpiFull.textContent = fmt(totals.full);
   els.kpiTiny.textContent = fmt(totals.tiny);
+  if (els.kpiTotalUnits) els.kpiTotalUnits.textContent = `${fmt(totals.fullUnits)} pacotes Full + ${fmt(totals.tinyUnits)} pacotes Tiny`;
+  if (els.kpiFullUnits) els.kpiFullUnits.textContent = `${fmt(totals.fullUnits)} pacotes`;
+  if (els.kpiTinyUnits) els.kpiTinyUnits.textContent = `${fmt(totals.tinyUnits)} pacotes`;
   els.kpiPeople.textContent = fmt(peopleRows.length);
   els.updatedAt.textContent = `Atualizado ${new Date(state.data.updatedAt).toLocaleString("pt-BR")}`;
   els.status.textContent = `${fmt(records.length)} lançamentos`;
@@ -736,33 +746,45 @@ function matchesRankingCommonFilters(record) {
 
 function sumTotals(records) {
   return records.reduce((acc, record) => {
+    const unitQty = recordUnitQty(record);
     acc.total += record.qty;
     if (record.source === "Full") acc.full += record.qty;
     if (record.source === "Tiny") acc.tiny += record.qty;
+    acc.totalUnits += unitQty;
+    if (record.source === "Full") acc.fullUnits += unitQty;
+    if (record.source === "Tiny") acc.tinyUnits += unitQty;
     return acc;
-  }, { total: 0, full: 0, tiny: 0 });
+  }, { total: 0, full: 0, tiny: 0, totalUnits: 0, fullUnits: 0, tinyUnits: 0 });
 }
 
 function byPerson(records) {
   const map = new Map();
   for (const record of records) {
-    if (!map.has(record.name)) map.set(record.name, { name: record.name, total: 0, full: 0, tiny: 0 });
+    if (!map.has(record.name)) {
+      map.set(record.name, { name: record.name, total: 0, full: 0, tiny: 0, totalUnits: 0, fullUnits: 0, tinyUnits: 0 });
+    }
     const row = map.get(record.name);
+    const unitQty = recordUnitQty(record);
     row.total += record.qty;
     row[record.source.toLowerCase()] += record.qty;
+    row.totalUnits += unitQty;
+    row[`${record.source.toLowerCase()}Units`] += unitQty;
   }
   return [...map.values()].sort((a, b) => b.total - a.total);
 }
 
 function byMonth(records) {
   const rows = monthNames
-    .map((name, idx) => ({ month: idx + 1, name, total: 0, full: 0, tiny: 0 }))
+    .map((name, idx) => ({ month: idx + 1, name, total: 0, full: 0, tiny: 0, totalUnits: 0, fullUnits: 0, tinyUnits: 0 }))
     .filter(row => !shouldHideCollaboratorMonth(row.month));
   for (const record of records) {
     const row = rows.find(item => item.month === record.month);
     if (!row) continue;
+    const unitQty = recordUnitQty(record);
     row.total += record.qty;
     row[record.source.toLowerCase()] += record.qty;
+    row.totalUnits += unitQty;
+    row[`${record.source.toLowerCase()}Units`] += unitQty;
   }
   return rows;
 }
@@ -772,8 +794,14 @@ function renderRanking(container, rows) {
     ? rows.map((row, idx) => `
         <div class="rank-row">
           <span>${idx + 1}</span>
-          <b>${escapeHtml(row.name)}</b>
-          <strong>${fmt(row.total)}</strong>
+          <div class="rank-person">
+            <b>${escapeHtml(row.name)}</b>
+            <small>${volumeSummary(row)}</small>
+          </div>
+          <div class="rank-score">
+            <strong>${fmt(row.total)}</strong>
+            <small>pontos</small>
+          </div>
         </div>
       `).join("")
     : `<p class="muted">Sem dados para o filtro atual.</p>`;
@@ -1008,24 +1036,29 @@ function renderPayoutSummary() {
 
   const rows = byPerson(records).map(row => ({ ...row, payout: calculatePayout(row.total) }));
   const totalPoints = rows.reduce((acc, row) => acc + row.total, 0);
+  const totalFullUnits = rows.reduce((acc, row) => acc + row.fullUnits, 0);
+  const totalTinyUnits = rows.reduce((acc, row) => acc + row.tinyUnits, 0);
   const totalAmount = rows.reduce((acc, row) => acc + row.payout.total, 0);
 
   els.payoutSubtitle.textContent = `${monthNames[month - 1]} ${year}`;
   els.payoutTotalAmount.textContent = formatCurrency(totalAmount);
   els.payoutTotalPoints.textContent = fmtPoints(totalPoints);
+  if (els.payoutTotalUnits) els.payoutTotalUnits.textContent = `${fmt(totalFullUnits)} pacotes Full + ${fmt(totalTinyUnits)} pacotes Tiny`;
   els.payoutPeople.textContent = fmt(rows.length);
   els.payoutTable.innerHTML = rows.length
     ? rows.map(row => `
       <tr>
         <td>${escapeHtml(row.name)}</td>
         <td><strong>${fmtPoints(row.total)}</strong></td>
+        <td>${fmt(row.fullUnits)}</td>
+        <td>${fmt(row.tinyUnits)}</td>
         <td>${formatCurrency(row.payout.tier1)}</td>
         <td>${formatCurrency(row.payout.tier2)}</td>
         <td>${formatCurrency(row.payout.tier3)}</td>
         <td><strong>${formatCurrency(row.payout.total)}</strong></td>
       </tr>
     `).join("")
-    : `<tr><td colspan="6">Sem pontos para o mês selecionado.</td></tr>`;
+    : `<tr><td colspan="8">Sem pontos para o mês selecionado.</td></tr>`;
 }
 
 function calculatePayout(points) {
@@ -1066,12 +1099,14 @@ function renderPreviousMonthTable(rows) {
         <td><strong>${fmt(row.total)}</strong></td>
         <td>${fmt(row.full)}</td>
         <td>${fmt(row.tiny)}</td>
+        <td>${fmt(row.fullUnits)}</td>
+        <td>${fmt(row.tinyUnits)}</td>
         <td>${fullShare}</td>
         <td>${tinyShare}</td>
       </tr>
     `;
     }).join("")
-    : `<tr><td colspan="6">Sem pontos no mes anterior.</td></tr>`;
+    : `<tr><td colspan="8">Sem pontos no mes anterior.</td></tr>`;
 }
 
 function renderTable(rows) {
@@ -1084,6 +1119,8 @@ function renderTable(rows) {
         <td><strong>${fmt(row.total)}</strong></td>
         <td>${fmt(row.full)}</td>
         <td>${fmt(row.tiny)}</td>
+        <td>${fmt(row.fullUnits)}</td>
+        <td>${fmt(row.tinyUnits)}</td>
         <td>${fullShare}</td>
         <td>${tinyShare}</td>
       </tr>
@@ -1111,9 +1148,11 @@ function renderMonthDetail() {
 
   const rows = byPerson(records);
   const total = rows.reduce((acc, row) => acc + row.total, 0);
+  const fullUnits = rows.reduce((acc, row) => acc + row.fullUnits, 0);
+  const tinyUnits = rows.reduce((acc, row) => acc + row.tinyUnits, 0);
   els.monthDetailPanel.hidden = false;
   els.monthDetailTitle.textContent = `${monthNames[month - 1]} - total por colaborador`;
-  els.monthDetailSubtitle.textContent = `${fmt(total)} pontos`;
+  els.monthDetailSubtitle.textContent = `${fmt(total)} pontos - ${fmt(fullUnits)} pacotes Full + ${fmt(tinyUnits)} pacotes Tiny`;
   els.monthDetailTable.innerHTML = rows.length
     ? rows.map(row => {
       const fullShare = row.total ? `${Math.round((row.full / row.total) * 100)}%` : "0%";
@@ -1124,12 +1163,14 @@ function renderMonthDetail() {
           <td><strong>${fmt(row.total)}</strong></td>
           <td>${fmt(row.full)}</td>
           <td>${fmt(row.tiny)}</td>
+          <td>${fmt(row.fullUnits)}</td>
+          <td>${fmt(row.tinyUnits)}</td>
           <td>${fullShare}</td>
           <td>${tinyShare}</td>
         </tr>
       `;
     }).join("")
-    : `<tr><td colspan="6">Sem pontos neste mes para os filtros atuais.</td></tr>`;
+    : `<tr><td colspan="8">Sem pontos neste mes para os filtros atuais.</td></tr>`;
 }
 
 function drawMonthlyChart(rows) {
@@ -1313,6 +1354,18 @@ function formatInputDate(value) {
   const [year, month, day] = String(value).split("-");
   if (!year || !month || !day) return value;
   return `${day}/${month}/${year}`;
+}
+
+function recordUnitQty(record) {
+  if (Number.isFinite(Number(record.unitQty))) return Number(record.unitQty);
+  return record.source === "Tiny" ? 1 : Number(record.qty || 0);
+}
+
+function volumeSummary(row) {
+  const parts = [];
+  if (row.fullUnits) parts.push(`${fmt(row.fullUnits)} pacotes Full`);
+  if (row.tinyUnits) parts.push(`${fmt(row.tinyUnits)} pacotes Tiny`);
+  return parts.length ? parts.join(" + ") : "Sem pacotes ou itens";
 }
 
 function fmt(value) {
