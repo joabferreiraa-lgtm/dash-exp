@@ -29,6 +29,25 @@
         </nav>
 
         <label>
+          Período
+          <select id="periodFilter">
+            <option value="yearMonth">Ano / Mês</option>
+            <option value="today">Hoje</option>
+            <option value="yesterday">Ontem</option>
+            <option value="7">Últimos 7 dias</option>
+            <option value="currentMonth">Mês atual</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </label>
+        <label>
+          Data inicial
+          <input id="periodStartDateFilter" type="date" />
+        </label>
+        <label>
+          Data final
+          <input id="periodEndDateFilter" type="date" />
+        </label>
+        <label>
           Ano
           <select id="yearFilter"></select>
         </label>
@@ -344,9 +363,10 @@
           </section>
         </div>      </main>
     </div>
-    <script src="/app.js?v=31" type="module"></script>
+    <script src="/app.js?v=33" type="module"></script>
   </body>
 </html>
+
 
 
 

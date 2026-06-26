@@ -6,6 +6,9 @@ const hiddenCollaboratorMonths = new Set([1, 2]);
 const state = {
   data: null,
   filters: {
+    periodMode: "yearMonth",
+    periodStartDate: "",
+    periodEndDate: "",
     year: "all",
     month: "all",
     account: "all",
@@ -28,6 +31,9 @@ const state = {
 let chartHitBoxes = [];
 
 const els = {
+  period: document.querySelector("#periodFilter"),
+  periodStartDate: document.querySelector("#periodStartDateFilter"),
+  periodEndDate: document.querySelector("#periodEndDateFilter"),
   year: document.querySelector("#yearFilter"),
   month: document.querySelector("#monthFilter"),
   account: document.querySelector("#accountFilter"),
@@ -142,6 +148,22 @@ document.addEventListener("keydown", event => {
 [els.year, els.month, els.account, els.source, els.person].filter(Boolean).forEach(select => {
   select.addEventListener("change", () => {
     state.filters[select.dataset.filter] = select.value;
+    render();
+  });
+});
+
+els.period?.addEventListener("change", () => {
+  state.filters.periodMode = els.period.value;
+  updatePeriodControls();
+  render();
+});
+
+[els.periodStartDate, els.periodEndDate].filter(Boolean).forEach(input => {
+  input.addEventListener("change", () => {
+    state.filters[input.dataset.filter] = input.value;
+    state.filters.periodMode = "custom";
+    if (els.period) els.period.value = "custom";
+    updatePeriodControls();
     render();
   });
 });
@@ -471,12 +493,22 @@ function setupFilters() {
     state.filters.year = String(years[0]);
   }
 
+  fillSelect(els.period, "periodMode", [
+    ["yearMonth", "Ano / Mês"],
+    ["today", "Hoje"],
+    ["yesterday", "Ontem"],
+    ["7", "Últimos 7 dias"],
+    ["currentMonth", "Mês atual"],
+    ["custom", "Personalizado"],
+  ]);
   fillSelect(els.year, "year", [["all", "Todos"], ...years.map(year => [String(year), String(year)])]);
   fillSelect(els.month, "month", [["all", "Todos"], ...monthNames.map((name, idx) => [String(idx + 1), name])]);
   fillSelect(els.account, "account", [["all", "Todas"], ...accounts.map(account => [account, account])]);
   fillSelect(els.source, "source", [["all", "Full + Tiny"], ["Full", "Apenas Full"], ["Tiny", "Apenas Tiny"]]);
   fillSelect(els.person, "person", [["all", "Todos"], ...people.map(person => [person, person])]);
   setupPayoutFilters(years);
+  if (els.periodStartDate) els.periodStartDate.dataset.filter = "periodStartDate";
+  if (els.periodEndDate) els.periodEndDate.dataset.filter = "periodEndDate";
   if (els.fullStartDate) els.fullStartDate.dataset.filter = "fullStartDate";
   if (els.fullEndDate) els.fullEndDate.dataset.filter = "fullEndDate";
   if (els.packedProductsStartDate) els.packedProductsStartDate.dataset.filter = "packedProductsStartDate";
@@ -485,9 +517,21 @@ function setupFilters() {
   if (els.year) {
     els.year.value = state.filters.year;
   }
+  if (els.periodStartDate) els.periodStartDate.value = state.filters.periodStartDate;
+  if (els.periodEndDate) els.periodEndDate.value = state.filters.periodEndDate;
   if (els.packedProductsPeriod) {
     els.packedProductsPeriod.value = state.filters.packedProductsPeriod;
   }
+  updatePeriodControls();
+}
+
+function updatePeriodControls() {
+  const mode = state.filters.periodMode;
+  if (els.period) els.period.value = mode;
+  if (els.year) els.year.disabled = mode !== "yearMonth";
+  if (els.month) els.month.disabled = mode !== "yearMonth";
+  if (els.periodStartDate) els.periodStartDate.disabled = mode !== "custom";
+  if (els.periodEndDate) els.periodEndDate.disabled = mode !== "custom";
 }
 
 function setupPayoutFilters(years) {
@@ -559,13 +603,65 @@ function render() {
 function filteredRecords() {
   return state.data.records.filter(record => {
     if (shouldHideCollaboratorMonth(record.month)) return false;
-    if (state.filters.year !== "all" && record.year !== Number(state.filters.year)) return false;
-    if (state.filters.month !== "all" && record.month !== Number(state.filters.month)) return false;
+    if (!matchesMainPeriod(record)) return false;
     if (state.filters.account !== "all" && record.account !== state.filters.account) return false;
     if (state.filters.source !== "all" && record.source !== state.filters.source) return false;
     if (state.filters.person !== "all" && record.name !== state.filters.person) return false;
     return true;
   });
+}
+
+function matchesMainPeriod(record) {
+  const mode = state.filters.periodMode;
+
+  if (mode === "yearMonth") {
+    if (state.filters.year !== "all" && record.year !== Number(state.filters.year)) return false;
+    if (state.filters.month !== "all" && record.month !== Number(state.filters.month)) return false;
+    return true;
+  }
+
+  const recordKey = dateKey(record.date);
+  if (!recordKey) return false;
+  const { startKey, endKey } = mainPeriodDateRange();
+  if (startKey && recordKey < startKey) return false;
+  if (endKey && recordKey > endKey) return false;
+  return true;
+}
+
+function mainPeriodDateRange() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const mode = state.filters.periodMode;
+
+  if (mode === "custom") {
+    return {
+      startKey: state.filters.periodStartDate || null,
+      endKey: state.filters.periodEndDate || null,
+    };
+  }
+
+  if (mode === "yesterday") {
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+    const key = dateKey(yesterday);
+    return { startKey: key, endKey: key };
+  }
+
+  if (mode === "7") {
+    return {
+      startKey: dateKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)),
+      endKey: dateKey(today),
+    };
+  }
+
+  if (mode === "currentMonth") {
+    return {
+      startKey: dateKey(new Date(today.getFullYear(), today.getMonth(), 1)),
+      endKey: dateKey(today),
+    };
+  }
+
+  const todayKey = dateKey(today);
+  return { startKey: todayKey, endKey: todayKey };
 }
 
 function shouldHideCollaboratorMonth(month) {
@@ -1006,7 +1102,7 @@ function renderMonthDetail() {
   const month = state.selectedMonth;
   const records = state.data.records.filter(record => {
     if (record.month !== month) return false;
-    if (state.filters.year !== "all" && record.year !== Number(state.filters.year)) return false;
+    if (!matchesMainPeriod(record)) return false;
     if (state.filters.account !== "all" && record.account !== state.filters.account) return false;
     if (state.filters.source !== "all" && record.source !== state.filters.source) return false;
     if (state.filters.person !== "all" && record.name !== state.filters.person) return false;
@@ -1116,12 +1212,32 @@ function monthFromChartEvent(event) {
 
 function filterLabel() {
   const parts = [];
-  if (state.filters.year !== "all") parts.push(state.filters.year);
-  if (state.filters.month !== "all") parts.push(monthNames[Number(state.filters.month) - 1]);
+  const period = mainPeriodLabel();
+  if (period) parts.push(period);
   if (state.filters.account !== "all") parts.push(state.filters.account);
   if (state.filters.source !== "all") parts.push(state.filters.source);
   if (state.filters.person !== "all") parts.push(state.filters.person);
   return parts.length ? parts.join(" · ") : "Todos os dados";
+}
+
+function mainPeriodLabel() {
+  const mode = state.filters.periodMode;
+
+  if (mode === "yearMonth") {
+    const parts = [];
+    if (state.filters.year !== "all") parts.push(state.filters.year);
+    if (state.filters.month !== "all") parts.push(monthNames[Number(state.filters.month) - 1]);
+    return parts.join(" ");
+  }
+
+  if (mode === "today") return "Hoje";
+  if (mode === "yesterday") return "Ontem";
+  if (mode === "7") return "Últimos 7 dias";
+  if (mode === "currentMonth") return "Mês atual";
+
+  const start = state.filters.periodStartDate || "início";
+  const end = state.filters.periodEndDate || "hoje";
+  return `${formatInputDate(start)} a ${formatInputDate(end)}`;
 }
 
 function last7Label() {
