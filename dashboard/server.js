@@ -293,6 +293,7 @@ function recordsFromFull(rows) {
   return data.map(row => {
     const name = clean(row[0]);
     const qty = fullItemsQty(row);
+    const unitQty = toNumber(row[1]);
     const date = toDate(row[8]);
     if (!name || !qty || !date) return null;
     return {
@@ -300,6 +301,7 @@ function recordsFromFull(rows) {
       account: "FULL",
       name,
       qty,
+      unitQty,
       productQty: toNumber(row[1]),
       sku: clean(row[2]),
       loja: clean(row[3]),
@@ -323,6 +325,7 @@ function recordsFromTinyRaw(rows, usuarios) {
     const id = clean(row[4]);
     const name = clean(usuarios[id] || row[5]);
     const qty = toNumber(row[13]) || toNumber(row[10]);
+    const unitQty = 1;
     const account = clean(row[12] || "CONTA1");
     const date = toDate(row[3] || row[1] || row[2]);
     if (!name || !qty || !date) return null;
@@ -331,6 +334,7 @@ function recordsFromTinyRaw(rows, usuarios) {
       account,
       name,
       qty,
+      unitQty,
       year: date.getFullYear(),
       month: date.getMonth() + 1,
       date: date.toISOString(),
