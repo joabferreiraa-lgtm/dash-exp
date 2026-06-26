@@ -455,6 +455,18 @@ function toDate(value) {
     );
   }
 
+  const isoLocal = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (isoLocal) {
+    return dateFromSaoPauloParts(
+      Number(isoLocal[1]),
+      Number(isoLocal[2]) - 1,
+      Number(isoLocal[3]),
+      Number(isoLocal[4] || 0),
+      Number(isoLocal[5] || 0),
+      Number(isoLocal[6] || 0),
+    );
+  }
+
   if (/^\d+(\.\d+)?$/.test(text)) {
     const serial = Number(text);
     if (serial > 20_000) {
