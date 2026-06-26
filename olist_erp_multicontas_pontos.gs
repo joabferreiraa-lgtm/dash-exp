@@ -68,7 +68,7 @@ function onOpen() {
     .addItem('Cancelar busca de itens', 'cancelarCargaItensSegundoPlano')
     .addItem('Recalcular pontos pelo Tiny_itens', 'recalcularPontosTinyRawPorItens')
     .addSeparator()
-    .addItem('Criar automacao 8h, 10h, 12h, 14h, 16h, 18h e 20h', 'criarTriggersDiariosOlist')
+    .addItem('Criar automacao 10h, 15h e 22h', 'criarTriggersDiariosOlist')
     .addItem('Apagar automacao diaria', 'apagarTriggersDiariosOlist')
     .addSeparator()
     .addItem('Resetar autorizacoes', 'resetarOlist')
@@ -1425,11 +1425,11 @@ function converterParaData_(valor) {
 
 /************ AUTOMACAO ************/
 function puxarHojeManualTodasContas() {
-  iniciarCargaHojeTodasContasEmFila_();
+  iniciarCargaHojeTodasContasEmFila_(false);
 }
 
 function atualizarHojeTodasContasAutomatico() {
-  atualizarHojeTodasContas_();
+  iniciarCargaHojeTodasContasEmFila_(true);
 }
 
 function atualizarHojeTodasContas_() {
@@ -1460,15 +1460,31 @@ function iniciarBuscaItensHojeSeSolicitada_() {
   return true;
 }
 
-function iniciarCargaHojeTodasContasEmFila_() {
+function iniciarCargaHojeTodasContasEmFila_(modoAutomatico) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const shTiny = ss.getSheetByName(TINY_SHEET_NAME) || ss.insertSheet(TINY_SHEET_NAME);
   const shRaw = ss.getSheetByName(TINY_RAW_SHEET_NAME) || ss.insertSheet(TINY_RAW_SHEET_NAME);
   const shCarga = ss.getSheetByName(TINY_CARGA_SHEET_NAME) || ss.insertSheet(TINY_CARGA_SHEET_NAME);
+  const shItensCarga = ss.getSheetByName(TINY_ITENS_CARGA_SHEET_NAME) || ss.insertSheet(TINY_ITENS_CARGA_SHEET_NAME);
 
   inicializarCamposTiny_(shTiny);
   garantirCabecalhoRaw_(shRaw);
   garantirCabecalhoCarga_(shCarga);
+  garantirCabecalhoItensCarga_(shItensCarga);
+
+  if (modoAutomatico && obterPendentesCarga_(shCarga, 1).length) {
+    escreverStatusCarga_(shTiny, 'Automacao: continuando fila de separacoes pendente...', '');
+    SpreadsheetApp.flush();
+    continuarCargaMesSegundoPlano();
+    return;
+  }
+
+  if (modoAutomatico && obterPendentesItensCarga_(shItensCarga, 1).length) {
+    escreverStatusCarga_(shTiny, 'Automacao: continuando fila de itens pendente...', '');
+    SpreadsheetApp.flush();
+    continuarCargaItensSegundoPlano();
+    return;
+  }
 
   const hoje = new Date();
   const dataInicial = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
@@ -1529,19 +1545,29 @@ function iniciarCargaHojeTodasContasEmFila_() {
 
   if (!linhasFila.length) {
     iniciarCargaItensPeriodoComDatas_(dataInicial, dataFinal);
-    SpreadsheetApp.getUi().alert('Nada novo para puxar hoje. Mesmo assim, iniciei a busca de itens de hoje para separacoes que ja estavam no Tiny_raw.');
+    const mensagem = 'Nada novo para puxar hoje. Mesmo assim, iniciei a busca de itens de hoje para separacoes que ja estavam no Tiny_raw.';
+    if (modoAutomatico) {
+      ss.toast(mensagem, 'Olist ERP', 5);
+    } else {
+      SpreadsheetApp.getUi().alert(mensagem);
+    }
     return;
   }
 
   marcarBuscaItensHojeAposCarga_();
   continuarCargaMesSegundoPlano();
-  SpreadsheetApp.getUi().alert('Fila de hoje criada. Ao terminar as separacoes, o script vai iniciar automaticamente a busca dos itens de hoje.');
+  const mensagem = 'Fila de hoje criada. Ao terminar as separacoes, o script vai iniciar automaticamente a busca dos itens de hoje.';
+  if (modoAutomatico) {
+    ss.toast(mensagem, 'Olist ERP', 5);
+  } else {
+    SpreadsheetApp.getUi().alert(mensagem);
+  }
 }
 
 function criarTriggersDiariosOlist() {
   apagarTriggersDiariosOlist();
 
-  [8, 10, 12, 14, 16, 18, 20].forEach(hora => {
+  [10, 15, 22].forEach(hora => {
     ScriptApp.newTrigger('atualizarHojeTodasContasAutomatico')
       .timeBased()
       .everyDays(1)
@@ -1549,7 +1575,7 @@ function criarTriggersDiariosOlist() {
       .create();
   });
 
-  SpreadsheetApp.getUi().alert('Automacao criada para rodar todos os dias as 8h, 10h, 12h, 14h, 16h, 18h e 20h.');
+  SpreadsheetApp.getUi().alert('Automacao criada para rodar todos os dias as 10h, 15h e 22h.');
 }
 
 function apagarTriggersDiariosOlist() {
