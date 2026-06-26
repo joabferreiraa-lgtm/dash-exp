@@ -348,6 +348,13 @@ h2 {
   color: var(--muted);
 }
 
+.data-freshness {
+  margin-top: 8px;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .status-pill {
   border: 1px solid var(--line);
   border-radius: 999px;

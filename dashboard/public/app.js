@@ -41,6 +41,7 @@ const els = {
   person: document.querySelector("#personFilter"),
   refresh: document.querySelector("#refreshButton"),
   updatedAt: document.querySelector("#updatedAt"),
+  tinyUpdatedAt: document.querySelector("#tinyUpdatedAt"),
   status: document.querySelector("#statusPill"),
   adminViewButtons: document.querySelectorAll("[data-admin-view]"),
   adminViews: document.querySelectorAll(".admin-view"),
@@ -585,6 +586,7 @@ function render() {
   if (els.kpiTinyUnits) els.kpiTinyUnits.textContent = `${fmt(totals.tinyUnits)} pacotes`;
   els.kpiPeople.textContent = fmt(peopleRows.length);
   els.updatedAt.textContent = `Atualizado ${new Date(state.data.updatedAt).toLocaleString("pt-BR")}`;
+  if (els.tinyUpdatedAt) els.tinyUpdatedAt.textContent = tinyUpdatedLabel();
   els.status.textContent = `${fmt(records.length)} lançamentos`;
   els.chartSubtitle.textContent = filterLabel();
   els.ranking7Subtitle.textContent = last7Label();
@@ -1307,6 +1309,26 @@ function previousMonthLabel() {
   const now = new Date();
   const previous = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   return `${monthNames[previous.getMonth()]} ${previous.getFullYear()}`;
+}
+
+function tinyUpdatedLabel() {
+  const latest = latestTinyRecordDate();
+  if (!latest) return "Tiny: nenhum registro importado";
+  return `Tiny atualizado ate ${formatDateTime(latest)} (ultimo registro importado)`;
+}
+
+function latestTinyRecordDate() {
+  const records = state.data?.records || [];
+  let latest = null;
+
+  for (const record of records) {
+    if (record.source !== "Tiny") continue;
+    const date = new Date(record.date);
+    if (Number.isNaN(date.getTime())) continue;
+    if (!latest || date > latest) latest = date;
+  }
+
+  return latest;
 }
 
 function formatDateTime(value) {
