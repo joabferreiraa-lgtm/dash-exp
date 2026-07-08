@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Proximos dias do rodizio</title>
+    <script src="/asset-guard.js?v=1"></script>
+    <link rel="stylesheet" href="/styles.css?v=19" />
+  </head>
+  <body>
+    <main>
+      <section class="topbar products-topbar">
+        <div>
+          <h1>Proximos dias do rodizio</h1>
+          <p id="rodizioNextSubtitle">Carregando escala.</p>
+        </div>
+        <div class="top-actions">
+          <a class="action-link" href="/">Voltar</a>
+        </div>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="panel-head">
+          <h2>Escala por dia util</h2>
+          <span>Sabados, domingos e feriados cadastrados ficam fora.</span>
+        </div>
+        <div class="table-wrap">
+          <table class="rodizio-next-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Shopee 1</th>
+                <th>Shopee 2</th>
+                <th>Shopee 3</th>
+                <th>Reserva do rodizio</th>
+                <th>Reserva fixa</th>
+              </tr>
+            </thead>
+            <tbody id="rodizioNextTable">
+              <tr><td colspan="6">Carregando escala.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="/rodizio-proximos.js?v=1" type="module"></script>
+  </body>
+</html>

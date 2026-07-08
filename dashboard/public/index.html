@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Produtividade de Embalagem</title>
     <script src="/asset-guard.js?v=1"></script>
-    <link rel="stylesheet" href="/styles.css?v=14" />
+    <link rel="stylesheet" href="/styles.css?v=19" />
   </head>
   <body>
     <div class="collab-app">
@@ -22,6 +22,17 @@
             <div class="status-pill" id="statusPill">Carregando</div>
           </div>
           <p id="updatedAt" hidden></p>
+        </section>
+
+        <section class="rodizio-today dashboard-content" aria-label="Escala do rodizio de hoje">
+          <div class="rodizio-today-head">
+            <div>
+              <h2>Rodizio de Embalagem</h2>
+              <p id="rodizioTodayText">Escala do dia.</p>
+            </div>
+            <a class="action-link rodizio-next-link" href="/rodizio-proximos.html">Proximos dias</a>
+          </div>
+          <div class="rodizio-compact-list" id="rodizioAssignmentGrid"></div>
         </section>
 
 
@@ -383,7 +394,7 @@
         </div>
       </section>
     </div>
-    <script src="/app.js?v=39" type="module"></script>
+    <script src="/app.js?v=43" type="module"></script>
   </body>
 </html>
 

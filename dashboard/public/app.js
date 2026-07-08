@@ -1,7 +1,21 @@
 ﻿const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const spreadsheetId = "1bS2iqiMXsXxBXpTkHYW2q2d0pM7smxfhD6e3gWtYRUo";
+const rodizioHolidaySheetName = "Rodizio_Feriados";
+const rodizioEmployees = ["Livia", "Jean", "Gabi", "Ana"];
+const rodizioFixedReserve = "Pedro";
+const rodizioShops = ["Shopee 1", "Shopee 2", "Shopee 3"];
+const rodizioBaseDate = "2026-07-08";
+const rodizioActualSchedules = {
+  "2026-07-08": {
+    "Shopee 1": ["Gabi"],
+    "Shopee 2": ["Pedro"],
+    "Shopee 3": ["Livia", "Jean", "Ana"],
+    Reserva: []
+  }
+};
 const isCollaboratorPage = Boolean(document.querySelector(".collab-app"));
 const hiddenCollaboratorMonths = new Set([1, 2]);
+const rodizioPermutations = allRodizioPermutations(rodizioEmployees);
 
 const state = {
   data: null,
@@ -26,6 +40,8 @@ const state = {
   },
   selectedMonth: null,
   maintenance: { enabled: false, message: "" },
+  rodizioHolidays: ["2026-07-09"],
+  rodizioLoaded: false,
 };
 
 let chartHitBoxes = [];
@@ -105,6 +121,8 @@ const els = {
   maintenanceSaveButton: document.querySelector("#maintenanceSaveButton"),
   maintenanceStatus: document.querySelector("#maintenanceStatus"),
   maintenanceFeedback: document.querySelector("#maintenanceFeedback"),
+  rodizioTodayText: document.querySelector("#rodizioTodayText"),
+  rodizioAssignmentGrid: document.querySelector("#rodizioAssignmentGrid"),
 };
 
 initMaintenanceControls();
@@ -309,6 +327,7 @@ async function loadData(force = false) {
   state.data.productRecords = [];
   setupFilters();
   render();
+  loadRodizioToday();
   if (els.packedProductsTable) loadPackedProductsData(force);
 }
 
@@ -1173,6 +1192,266 @@ function renderMonthDetail() {
       `;
     }).join("")
     : `<tr><td colspan="8">Sem pontos neste mes para os filtros atuais.</td></tr>`;
+}
+
+async function loadRodizioToday() {
+  if (!els.rodizioAssignmentGrid) return;
+  if (!state.rodizioLoaded) {
+    await loadRodizioHolidays();
+    state.rodizioLoaded = true;
+  }
+  renderRodizioToday();
+}
+
+async function loadRodizioHolidays() {
+  try {
+    const response = await fetch("/api/rodizio-feriados");
+    if (!response.ok) throw new Error("api indisponivel");
+    const data = await response.json();
+    if (Array.isArray(data.holidays)) state.rodizioHolidays = data.holidays;
+    return;
+  } catch {
+    try {
+      const rows = await fetchSheetCsv(rodizioHolidaySheetName);
+      state.rodizioHolidays = rodizioHolidaysFromRows(rows);
+    } catch {
+      state.rodizioHolidays = ["2026-07-09"];
+    }
+  }
+}
+
+function renderRodizioToday() {
+  if (!els.rodizioAssignmentGrid) return;
+
+  const today = rodizioNormalizeBusinessDay(rodizioLocalDateString());
+  const schedule = rodizioScheduleForDate(today);
+  els.rodizioTodayText.textContent = `Escala de ${rodizioFormatLongDate(today)}.`;
+  els.rodizioAssignmentGrid.innerHTML = "";
+
+  const items = [
+    ...rodizioShops.map(shop => [shop, rodizioFormatPeople(schedule[shop]), "Loja principal"]),
+    ["Reserva", rodizioFormatPeople(schedule.Reserva), "Apoio"],
+    ["Reserva fixa", rodizioFixedReserve, "Apoio"]
+  ];
+
+  items.forEach(([label, person, role], index) => {
+    const item = document.createElement("div");
+    item.className = "rodizio-compact-item";
+    if (index < 3) item.classList.add("is-shop");
+    if (index === 3) item.classList.add("is-reserve");
+    if (index === 4) item.classList.add("is-fixed");
+
+    const labelEl = document.createElement("span");
+    labelEl.className = "rodizio-compact-label";
+    labelEl.textContent = label;
+
+    const personEl = document.createElement("strong");
+    personEl.textContent = person;
+
+    const roleEl = document.createElement("small");
+    roleEl.textContent = role;
+
+    item.append(labelEl, personEl, roleEl);
+    els.rodizioAssignmentGrid.append(item);
+  });
+}
+
+function rodizioHolidaysFromRows(rows) {
+  return Array.from(new Set(rows.slice(1).map(row => rodizioDateKeyFromSheetValue(row[0])).filter(Boolean))).sort();
+}
+
+function rodizioDateKeyFromSheetValue(value) {
+  const text = clean(value);
+  if (!text) return "";
+
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+
+  const br = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (br) return `${br[3]}-${String(br[2]).padStart(2, "0")}-${String(br[1]).padStart(2, "0")}`;
+
+  const gvizDate = text.match(/Date\((\d{4}),(\d{1,2}),(\d{1,2})\)/);
+  if (gvizDate) return `${gvizDate[1]}-${String(Number(gvizDate[2]) + 1).padStart(2, "0")}-${String(gvizDate[3]).padStart(2, "0")}`;
+
+  const date = new Date(text);
+  if (!Number.isNaN(date.getTime())) return rodizioLocalDateString(date);
+  return "";
+}
+
+function rodizioLocalDateString(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+function rodizioParseDate(value) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function rodizioAddDays(value, amount) {
+  const date = rodizioParseDate(value);
+  date.setDate(date.getDate() + amount);
+  return rodizioLocalDateString(date);
+}
+
+function rodizioIsWeekend(value) {
+  const day = rodizioParseDate(value).getDay();
+  return day === 0 || day === 6;
+}
+
+function rodizioIsHeavyDay(value) {
+  const day = rodizioParseDate(value).getDay();
+  return day === 1 || day === 2;
+}
+
+function rodizioIsOffDay(value) {
+  return rodizioIsWeekend(value) || state.rodizioHolidays.includes(value);
+}
+
+function rodizioNextBusinessDay(value) {
+  let date = rodizioAddDays(value, 1);
+  while (rodizioIsOffDay(date)) date = rodizioAddDays(date, 1);
+  return date;
+}
+
+function rodizioNormalizeBusinessDay(value) {
+  let date = value;
+  while (rodizioIsOffDay(date)) date = rodizioNextBusinessDay(date);
+  return date;
+}
+
+function rodizioDayIndex(value) {
+  const start = rodizioParseDate(rodizioBaseDate) <= rodizioParseDate(value) ? rodizioBaseDate : value;
+  const end = rodizioParseDate(rodizioBaseDate) <= rodizioParseDate(value) ? value : rodizioBaseDate;
+  let cursor = start;
+  let count = 0;
+
+  while (cursor !== end) {
+    cursor = rodizioAddDays(cursor, 1);
+    if (!rodizioIsOffDay(cursor)) count += 1;
+  }
+
+  return start === rodizioBaseDate ? count : -count;
+}
+
+function allRodizioPermutations(items) {
+  if (items.length === 1) return [items];
+  const result = [];
+  items.forEach((item, index) => {
+    const rest = items.slice(0, index).concat(items.slice(index + 1));
+    allRodizioPermutations(rest).forEach(permutation => {
+      result.push([item].concat(permutation));
+    });
+  });
+  return result;
+}
+
+function rodizioPeopleFor(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  return [value];
+}
+
+function rodizioFormatPeople(value) {
+  const people = rodizioPeopleFor(value);
+  if (!people.length) return "-";
+  if (people.length === 1) return people[0];
+  return `${people.slice(0, -1).join(", ")} e ${people[people.length - 1]}`;
+}
+
+function rodizioAddScheduleCounts(counts, schedule, date) {
+  Object.entries(schedule).forEach(([position, value]) => {
+    rodizioPeopleFor(value).forEach(employee => {
+      if (counts[employee] && counts[employee][position] !== undefined) {
+        counts[employee][position] += 1;
+        if (rodizioIsHeavyDay(date) && rodizioShops.includes(position)) counts[employee].DiaForte += 1;
+      }
+    });
+  });
+}
+
+function rodizioBuildScheduleUntil(targetIndex) {
+  const counts = {};
+  rodizioEmployees.forEach(employee => {
+    counts[employee] = { "Shopee 1": 0, "Shopee 2": 0, "Shopee 3": 0, Reserva: 0, DiaForte: 0 };
+  });
+
+  let previous = null;
+  const schedules = [];
+  const totalDays = Math.max(0, targetIndex);
+  let currentDate = rodizioBaseDate;
+
+  for (let day = 0; day <= totalDays; day += 1) {
+    let best = null;
+
+    if (rodizioActualSchedules[currentDate]) {
+      best = rodizioActualSchedules[currentDate];
+    } else {
+      let bestScore = Infinity;
+
+      rodizioPermutations.forEach((candidate, candidateIndex) => {
+        const positions = {
+          "Shopee 1": candidate[0],
+          "Shopee 2": candidate[1],
+          "Shopee 3": candidate[2],
+          Reserva: candidate[3]
+        };
+
+        let score = 0;
+        Object.entries(positions).forEach(([position, employee]) => {
+          score += Math.pow(counts[employee][position] + 1, 2) * 18;
+          if (previous && rodizioPeopleFor(previous[position]).includes(employee)) score += 1000;
+          if (rodizioIsHeavyDay(currentDate) && rodizioShops.includes(position)) {
+            score += Math.pow(counts[employee].DiaForte + 1, 2) * 35;
+          }
+        });
+
+        if (previous && rodizioPeopleFor(previous.Reserva).includes(positions.Reserva)) score += 1400;
+        score += ((candidateIndex + day * 7) % 11) / 100;
+
+        if (score < bestScore) {
+          bestScore = score;
+          best = positions;
+        }
+      });
+    }
+
+    rodizioAddScheduleCounts(counts, best, currentDate);
+    schedules.push(best);
+    previous = best;
+    currentDate = rodizioNextBusinessDay(currentDate);
+  }
+
+  return schedules[targetIndex] || schedules[0];
+}
+
+function rodizioScheduleForDate(value) {
+  const index = rodizioDayIndex(value);
+  if (index >= 0) return rodizioBuildScheduleUntil(index);
+
+  const shifted = ((index % rodizioPermutations.length) + rodizioPermutations.length) % rodizioPermutations.length;
+  const candidate = rodizioPermutations[shifted];
+  return {
+    "Shopee 1": candidate[0],
+    "Shopee 2": candidate[1],
+    "Shopee 3": candidate[2],
+    Reserva: candidate[3]
+  };
+}
+
+function rodizioFormatLongDate(value) {
+  return rodizioParseDate(value).toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  });
 }
 
 function drawMonthlyChart(rows) {

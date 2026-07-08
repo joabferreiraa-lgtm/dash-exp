@@ -371,6 +371,145 @@ h2 {
   margin-bottom: 14px;
 }
 
+.rodizio-today {
+  margin-bottom: 14px;
+}
+
+.rodizio-today-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.rodizio-today-head h2 {
+  font-size: 16px;
+}
+
+.rodizio-today-head p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.rodizio-compact-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rodizio-compact-item {
+  min-height: 72px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.rodizio-compact-item.is-shop {
+  background: #f8fafc;
+  border-color: #bfdbfe;
+}
+
+.rodizio-compact-item.is-reserve {
+  background: #e8f5f1;
+  border-color: #a8d7cd;
+}
+
+.rodizio-compact-item.is-fixed {
+  background: #edf3ff;
+  border-color: #b9cdfd;
+}
+
+.rodizio-compact-label {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rodizio-compact-item strong {
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.12;
+}
+
+.rodizio-compact-item small {
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.rodizio-shop-card {
+  min-height: 72px;
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+
+.rodizio-label {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rodizio-person {
+  display: block;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.12;
+}
+
+.rodizio-role-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.rodizio-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.rodizio-next-link {
+  min-height: 34px;
+  font-size: 13px;
+}
+
+.rodizio-next-table {
+  min-width: 780px;
+}
+
+.rodizio-next-table th,
+.rodizio-next-table td {
+  text-align: left;
+}
+
+.rodizio-next-table td:first-child {
+  color: var(--ink);
+}
+
 .kpis article,
 .panel {
   background: var(--panel);
@@ -631,6 +770,10 @@ th {
 
   .grid,
   .kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .rodizio-compact-list {
     grid-template-columns: 1fr;
   }
 
