@@ -16,6 +16,7 @@ const SHEETS = {
   tinyRaw: "Tiny_raw",
   tinyItens: "Tiny_itens",
   usuarios: "usuarios",
+  rodizioFeriados: "Rodizio_Feriados",
 };
 const SAO_PAULO_UTC_OFFSET_HOURS = 3;
 
@@ -93,6 +94,12 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/api/full-recent") {
       const entries = await getRecentFullEntries();
       sendJson(res, { entries });
+      return;
+    }
+
+    if (url.pathname === "/api/rodizio-feriados") {
+      const rows = await fetchSheet(SHEETS.rodizioFeriados);
+      sendJson(res, { holidays: holidaysFromRows(rows) });
       return;
     }
 
@@ -286,6 +293,31 @@ async function fetchSheet(sheetName) {
   }
   const csv = await response.text();
   return parseCsv(csv);
+}
+
+function holidaysFromRows(rows) {
+  return [...new Set(rows.slice(1)
+    .map(row => dateKeyFromSheetValue(row[0]))
+    .filter(Boolean))]
+    .sort();
+}
+
+function dateKeyFromSheetValue(value) {
+  const text = clean(value);
+  if (!text) return "";
+
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+
+  const br = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (br) return `${br[3]}-${String(br[2]).padStart(2, "0")}-${String(br[1]).padStart(2, "0")}`;
+
+  const gvizDate = text.match(/Date\((\d{4}),(\d{1,2}),(\d{1,2})\)/);
+  if (gvizDate) return `${gvizDate[1]}-${String(Number(gvizDate[2]) + 1).padStart(2, "0")}-${String(gvizDate[3]).padStart(2, "0")}`;
+
+  const date = new Date(text);
+  if (!Number.isNaN(date.getTime())) return dateKey(date);
+  return "";
 }
 
 function recordsFromFull(rows) {
