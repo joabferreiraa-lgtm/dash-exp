@@ -1,10 +1,12 @@
 ﻿const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const spreadsheetId = "1bS2iqiMXsXxBXpTkHYW2q2d0pM7smxfhD6e3gWtYRUo";
 const rodizioHolidaySheetName = "Rodizio_Feriados";
-const rodizioEmployees = ["Livia", "Jean", "Gabi", "Ana"];
+const rodizioLegacyEmployees = ["Livia", "Jean", "Gabi", "Ana"];
+const rodizioCurrentEmployees = ["Livia", "Jean", "Gabi", "Ana", "Dara"];
 const rodizioFixedReserve = "Pedro";
 const rodizioShops = ["Shopee 1", "Shopee 2", "Shopee 3"];
 const rodizioBaseDate = "2026-07-08";
+const rodizioChangeDate = "2026-08-06";
 const rodizioActualSchedules = {
   "2026-07-08": {
     "Shopee 1": ["Gabi"],
@@ -15,7 +17,8 @@ const rodizioActualSchedules = {
 };
 const isCollaboratorPage = Boolean(document.querySelector(".collab-app"));
 const hiddenCollaboratorMonths = new Set([1, 2]);
-const rodizioPermutations = allRodizioPermutations(rodizioEmployees);
+const rodizioLegacyPermutations = allRodizioPermutations(rodizioLegacyEmployees);
+const rodizioCurrentPermutations = allRodizioPermutations(rodizioCurrentEmployees);
 
 const state = {
   data: null,
@@ -1378,7 +1381,7 @@ function rodizioAddScheduleCounts(counts, schedule, date) {
 
 function rodizioBuildScheduleUntil(targetIndex) {
   const counts = {};
-  rodizioEmployees.forEach(employee => {
+  [...new Set([...rodizioLegacyEmployees, ...rodizioCurrentEmployees])].forEach(employee => {
     counts[employee] = { "Shopee 1": 0, "Shopee 2": 0, "Shopee 3": 0, Reserva: 0, DiaForte: 0 };
   });
 
@@ -1394,14 +1397,23 @@ function rodizioBuildScheduleUntil(targetIndex) {
       best = rodizioActualSchedules[currentDate];
     } else {
       let bestScore = Infinity;
+      const usesCurrentRule = currentDate >= rodizioChangeDate;
+      const permutations = usesCurrentRule ? rodizioCurrentPermutations : rodizioLegacyPermutations;
 
-      rodizioPermutations.forEach((candidate, candidateIndex) => {
-        const positions = {
-          "Shopee 1": candidate[0],
-          "Shopee 2": candidate[1],
-          "Shopee 3": candidate[2],
-          Reserva: candidate[3]
-        };
+      permutations.forEach((candidate, candidateIndex) => {
+        const positions = usesCurrentRule
+          ? {
+            "Shopee 1": candidate[0],
+            "Shopee 2": [candidate[1], candidate[2]],
+            "Shopee 3": [candidate[3], candidate[4]],
+            Reserva: []
+          }
+          : {
+            "Shopee 1": candidate[0],
+            "Shopee 2": candidate[1],
+            "Shopee 3": candidate[2],
+            Reserva: candidate[3]
+          };
 
         let score = 0;
         Object.entries(positions).forEach(([position, employee]) => {
@@ -1435,8 +1447,8 @@ function rodizioScheduleForDate(value) {
   const index = rodizioDayIndex(value);
   if (index >= 0) return rodizioBuildScheduleUntil(index);
 
-  const shifted = ((index % rodizioPermutations.length) + rodizioPermutations.length) % rodizioPermutations.length;
-  const candidate = rodizioPermutations[shifted];
+  const shifted = ((index % rodizioLegacyPermutations.length) + rodizioLegacyPermutations.length) % rodizioLegacyPermutations.length;
+  const candidate = rodizioLegacyPermutations[shifted];
   return {
     "Shopee 1": candidate[0],
     "Shopee 2": candidate[1],

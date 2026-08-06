@@ -1,7 +1,9 @@
-const employees = ["Livia", "Jean", "Gabi", "Ana"];
+const legacyEmployees = ["Livia", "Jean", "Gabi", "Ana"];
+const currentEmployees = ["Livia", "Jean", "Gabi", "Ana", "Dara"];
 const fixedReserve = "Pedro";
 const shops = ["Shopee 1", "Shopee 2", "Shopee 3"];
 const baseDate = "2026-07-08";
+const changeDate = "2026-08-06";
 const actualSchedules = {
   "2026-07-08": {
     "Shopee 1": ["Gabi"],
@@ -11,7 +13,8 @@ const actualSchedules = {
   }
 };
 
-const permutations = allPermutations(employees);
+const legacyPermutations = allPermutations(legacyEmployees);
+const currentPermutations = allPermutations(currentEmployees);
 let holidays = ["2026-07-09"];
 
 const els = {
@@ -161,7 +164,7 @@ function addScheduleCounts(counts, schedule, date) {
 
 function buildScheduleUntil(targetIndex) {
   const counts = {};
-  employees.forEach(employee => {
+  [...new Set([...legacyEmployees, ...currentEmployees])].forEach(employee => {
     counts[employee] = { "Shopee 1": 0, "Shopee 2": 0, "Shopee 3": 0, Reserva: 0, DiaForte: 0 };
   });
 
@@ -177,14 +180,23 @@ function buildScheduleUntil(targetIndex) {
       best = actualSchedules[currentDate];
     } else {
       let bestScore = Infinity;
+      const usesCurrentRule = currentDate >= changeDate;
+      const permutations = usesCurrentRule ? currentPermutations : legacyPermutations;
 
       permutations.forEach((candidate, candidateIndex) => {
-        const positions = {
-          "Shopee 1": candidate[0],
-          "Shopee 2": candidate[1],
-          "Shopee 3": candidate[2],
-          Reserva: candidate[3]
-        };
+        const positions = usesCurrentRule
+          ? {
+            "Shopee 1": candidate[0],
+            "Shopee 2": [candidate[1], candidate[2]],
+            "Shopee 3": [candidate[3], candidate[4]],
+            Reserva: []
+          }
+          : {
+            "Shopee 1": candidate[0],
+            "Shopee 2": candidate[1],
+            "Shopee 3": candidate[2],
+            Reserva: candidate[3]
+          };
 
         let score = 0;
         Object.entries(positions).forEach(([position, employee]) => {
@@ -218,8 +230,8 @@ function scheduleForDate(value) {
   const index = dayIndex(value);
   if (index >= 0) return buildScheduleUntil(index);
 
-  const shifted = ((index % permutations.length) + permutations.length) % permutations.length;
-  const candidate = permutations[shifted];
+  const shifted = ((index % legacyPermutations.length) + legacyPermutations.length) % legacyPermutations.length;
+  const candidate = legacyPermutations[shifted];
   return {
     "Shopee 1": candidate[0],
     "Shopee 2": candidate[1],
