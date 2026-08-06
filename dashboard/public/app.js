@@ -13,6 +13,12 @@ const rodizioActualSchedules = {
     "Shopee 2": ["Pedro"],
     "Shopee 3": ["Livia", "Jean", "Ana"],
     Reserva: []
+  },
+  "2026-08-06": {
+    "Shopee 1": ["Ana"],
+    "Shopee 2": ["Jean"],
+    "Shopee 3": ["Livia"],
+    Reserva: ["Gabi", "Dara"]
   }
 };
 const isCollaboratorPage = Boolean(document.querySelector(".collab-app"));
@@ -1282,6 +1288,7 @@ function rodizioDateKeyFromSheetValue(value) {
 }
 
 function rodizioLocalDateString(date = new Date()) {
+  if (typeof date === "string") return date;
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
     year: "numeric",
@@ -1294,22 +1301,22 @@ function rodizioLocalDateString(date = new Date()) {
 
 function rodizioParseDate(value) {
   const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 }
 
 function rodizioAddDays(value, amount) {
   const date = rodizioParseDate(value);
-  date.setDate(date.getDate() + amount);
-  return rodizioLocalDateString(date);
+  date.setUTCDate(date.getUTCDate() + amount);
+  return rodizioDateKeyFromUtcDate(date);
 }
 
 function rodizioIsWeekend(value) {
-  const day = rodizioParseDate(value).getDay();
+  const day = rodizioParseDate(value).getUTCDay();
   return day === 0 || day === 6;
 }
 
 function rodizioIsHeavyDay(value) {
-  const day = rodizioParseDate(value).getDay();
+  const day = rodizioParseDate(value).getUTCDay();
   return day === 1 || day === 2;
 }
 
@@ -1416,12 +1423,14 @@ function rodizioBuildScheduleUntil(targetIndex) {
           };
 
         let score = 0;
-        Object.entries(positions).forEach(([position, employee]) => {
-          score += Math.pow(counts[employee][position] + 1, 2) * 18;
-          if (previous && rodizioPeopleFor(previous[position]).includes(employee)) score += 1000;
-          if (rodizioIsHeavyDay(currentDate) && rodizioShops.includes(position)) {
-            score += Math.pow(counts[employee].DiaForte + 1, 2) * 35;
-          }
+        Object.entries(positions).forEach(([position, value]) => {
+          rodizioPeopleFor(value).forEach(employee => {
+            score += Math.pow(counts[employee][position] + 1, 2) * 18;
+            if (previous && rodizioPeopleFor(previous[position]).includes(employee)) score += 1000;
+            if (rodizioIsHeavyDay(currentDate) && rodizioShops.includes(position)) {
+              score += Math.pow(counts[employee].DiaForte + 1, 2) * 35;
+            }
+          });
         });
 
         if (previous && rodizioPeopleFor(previous.Reserva).includes(positions.Reserva)) score += 1400;
@@ -1459,11 +1468,20 @@ function rodizioScheduleForDate(value) {
 
 function rodizioFormatLongDate(value) {
   return rodizioParseDate(value).toLocaleDateString("pt-BR", {
+    timeZone: "UTC",
     weekday: "long",
     day: "2-digit",
     month: "long",
     year: "numeric"
   });
+}
+
+function rodizioDateKeyFromUtcDate(date) {
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
+  ].join("-");
 }
 
 function drawMonthlyChart(rows) {

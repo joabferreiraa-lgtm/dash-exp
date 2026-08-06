@@ -10,6 +10,12 @@ const actualSchedules = {
     "Shopee 2": ["Pedro"],
     "Shopee 3": ["Livia", "Jean", "Ana"],
     Reserva: []
+  },
+  "2026-08-06": {
+    "Shopee 1": ["Ana"],
+    "Shopee 2": ["Jean"],
+    "Shopee 3": ["Livia"],
+    Reserva: ["Gabi", "Dara"]
   }
 };
 
@@ -65,6 +71,7 @@ function renderNextDays() {
 }
 
 function localDateString(date = new Date()) {
+  if (typeof date === "string") return date;
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
     year: "numeric",
@@ -77,22 +84,22 @@ function localDateString(date = new Date()) {
 
 function parseDate(value) {
   const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 }
 
 function addDays(value, amount) {
   const date = parseDate(value);
-  date.setDate(date.getDate() + amount);
-  return localDateString(date);
+  date.setUTCDate(date.getUTCDate() + amount);
+  return dateKeyFromUtcDate(date);
 }
 
 function isWeekend(value) {
-  const day = parseDate(value).getDay();
+  const day = parseDate(value).getUTCDay();
   return day === 0 || day === 6;
 }
 
 function isHeavyDay(value) {
-  const day = parseDate(value).getDay();
+  const day = parseDate(value).getUTCDay();
   return day === 1 || day === 2;
 }
 
@@ -199,12 +206,14 @@ function buildScheduleUntil(targetIndex) {
           };
 
         let score = 0;
-        Object.entries(positions).forEach(([position, employee]) => {
-          score += Math.pow(counts[employee][position] + 1, 2) * 18;
-          if (previous && peopleFor(previous[position]).includes(employee)) score += 1000;
-          if (isHeavyDay(currentDate) && shops.includes(position)) {
-            score += Math.pow(counts[employee].DiaForte + 1, 2) * 35;
-          }
+        Object.entries(positions).forEach(([position, value]) => {
+          peopleFor(value).forEach(employee => {
+            score += Math.pow(counts[employee][position] + 1, 2) * 18;
+            if (previous && peopleFor(previous[position]).includes(employee)) score += 1000;
+            if (isHeavyDay(currentDate) && shops.includes(position)) {
+              score += Math.pow(counts[employee].DiaForte + 1, 2) * 35;
+            }
+          });
         });
 
         if (previous && peopleFor(previous.Reserva).includes(positions.Reserva)) score += 1400;
@@ -242,6 +251,7 @@ function scheduleForDate(value) {
 
 function formatShortDate(value) {
   return parseDate(value).toLocaleDateString("pt-BR", {
+    timeZone: "UTC",
     weekday: "short",
     day: "2-digit",
     month: "2-digit",
@@ -250,11 +260,20 @@ function formatShortDate(value) {
 
 function formatLongDate(value) {
   return parseDate(value).toLocaleDateString("pt-BR", {
+    timeZone: "UTC",
     weekday: "long",
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
+}
+
+function dateKeyFromUtcDate(date) {
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
+  ].join("-");
 }
 
 function escapeHtml(value) {
